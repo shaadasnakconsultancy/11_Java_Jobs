@@ -2,41 +2,87 @@ package com.snak.Services;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.mail.internet.MimeMessage;
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
 
 import com.snak.dto.excelJobTrackerDTO;
 
 
-@Service
+//@Service
 public class emailSender {
 
-	@Autowired
-	JavaMailSender  mailSender;
-	
-	@Autowired
-	SimpleMailMessage message;
-	@Autowired
-	applicationPropertiesService applicationPropertiesService;
+	static String databaseurl=null;
+	static String username=null;
+	static String password=null;
+	static applicationPropertiesService applicationPropertiesService=null;
  
 	static Logger logger=LoggerFactory.getLogger(emailSender.class); 
-	@Autowired 
-	 DataSource DataSource;
 	
+	
+	
+	 private JavaMailSender mailSender;
+	    private SimpleMailMessage message;
+	
+	    public emailSender(applicationPropertiesService applicationPropertiesService) {
+	    	  this.applicationPropertiesService = applicationPropertiesService;
+
+	    	    databaseurl = applicationPropertiesService.getProperty("spring.datasource.url");
+	    	    username = applicationPropertiesService.getProperty("spring.datasource.username");
+	    	    password = applicationPropertiesService.getProperty("spring.datasource.password");
+
+	    	
+	    	
+	    	JavaMailSenderImpl	 mailSender = new JavaMailSenderImpl();
+			  mailSender.setHost("smtp.gmail.com");
+			     mailSender.setPort(587);
+			     mailSender.setUsername("mdshaadansari5@gmail.com");
+			     mailSender.setPassword("ldrx bawm lfuf ozuc");
+			     
+			     // Configure SMTP properties
+			     Properties props = mailSender.getJavaMailProperties();
+			    
+			     props.put("mail.transport.protocol", "smtp");
+			     props.put("mail.smtp.auth", "true");
+			     props.put("mail.smtp.starttls.enable", "true");
+			     
+
+		/*
+		 //shaada@snakconsultancy.com
+		  
+		     mailSender.setHost("smtp.office365.com");
+		     mailSender.setPort(587);
+		     mailSender.setUsername("shaada@snakconsultancy.com");
+		     mailSender.setPassword("N!382106479982uy@");
+		     // Configure SMTP properties
+		     Properties props = mailSender.getJavaMailProperties();
+		   
+		     props.put("mail.transport.protocol", "smtp");
+		     props.put("mail.smtp.auth", "true");
+		     props.put("mail.smtp.starttls.enable", "true");
+		     props.put("mail.smtp.starttls.required", "true");
+		     */
+
+	        this.mailSender = mailSender;
+	        this.message = new SimpleMailMessage();
+	    }
+	
+	    
+	    
 public void sendEmail(String sendEmailTo,String emailSubject,String emailMessage) {
 	String sendEmailFrom=applicationPropertiesService.getProperty("send.email.from");
 	/*try {
@@ -95,7 +141,7 @@ System.out.println("sendSuccessEmailWithExcelJobTracketData");
 //1.    if DB with name 'FinanceDashboard' does not exist
 
 	System.out.println("in try");
-	conn = DataSource.getConnection();
+	conn = DriverManager.getConnection(databaseurl,username,password);
 	conn.setAutoCommit(false);
 	sql="SELECT DB_NAME()";
 	pstmt= conn.prepareStatement(sql);
@@ -315,7 +361,7 @@ System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
 //1.    if DB with name 'FinanceDashboard' does not exist
 
 	System.out.println("in try");
-	conn = DataSource.getConnection();
+	conn = DriverManager.getConnection(databaseurl,username,password);
 	conn.setAutoCommit(false);
 	sql="SELECT DB_NAME()";
 	pstmt= conn.prepareStatement(sql);

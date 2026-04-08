@@ -9,6 +9,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 @Configuration  
 public class AppConfiguration  { 
+	/*
 	@Bean
 	public JavaMailSenderImpl JavaMailSender() {
 		JavaMailSenderImpl	 mailSender = new JavaMailSenderImpl();
@@ -39,13 +40,15 @@ public class AppConfiguration  {
 	     props.put("mail.smtp.auth", "true");
 	     props.put("mail.smtp.starttls.enable", "true");
 	     props.put("mail.smtp.starttls.required", "true");
-	     */
+	
 		return mailSender;
 		
 	}
-	
+*/
+	/*
 	@Bean
 	public SimpleMailMessage SimpleMailMessage() {
 		return new SimpleMailMessage();
 	}
+	*/
 }

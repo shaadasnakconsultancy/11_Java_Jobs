@@ -1,0 +1,26 @@
+#updated on -
+#Wed Apr 08 09:59:17 IST 2026
+
+archive.directory.path=E\:\\JobExcelFiles\\Java JobExelFiles\\JAVA JOB Archive\\Archive\\P&L\\
+archive.directory.path.fundflow=E\:\\JobExcelFiles\\Java JobExelFiles\\JAVA JOB Archive\\Archive\\Fund Flow\\
+archive.directory.path.plbudget=E\:\\JobExcelFiles\\Java JobExelFiles\\JAVA JOB Archive\\Archive\\pl budget domestic and export\\
+archive.directory.path.resultexpense=E\:\\JobExcelFiles\\Java JobExelFiles\\JAVA JOB Archive\\Archive\\result expense\\
+debug=true
+directory.path=E\:\\JobExcelFiles\\Java JobExelFiles\\P&L\\
+directory.path.fundflow=E\:\\JobExcelFiles\\Java JobExelFiles\\Fund Flow\\Fund Flow\\
+directory.path.plbudget=E\:\\JobExcelFiles\\Java JobExelFiles\\pl budget domestic and export\\
+directory.path.resultexpense=E\:\\JobExcelFiles\\Java JobExelFiles\\result expense\\Result Expense\\
+job.batch.id=100
+logging.level.root=DEBUG
+logs.message=
+logs.present=no.logs.areNot.present
+
+properties.file.path.outside.jar=E\:/migrate java jobs/Executable/config/application.properties
+send.email.from=shaada@snakconsultancy.com
+send.email.to=mdshaadansari5@gmail.com
+spring.application.name=JAVAJOBS
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.datasource.password=SnaK@12345I
+spring.datasource.url=jdbc\:sqlserver\://139.59.4.149;databaseName\=FinanceDashboard;
+spring.datasource.username=sa
+spring.devtools.restart.enabled=false

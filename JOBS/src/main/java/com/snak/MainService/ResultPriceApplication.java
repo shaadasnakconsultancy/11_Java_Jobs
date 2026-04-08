@@ -49,9 +49,7 @@ public class ResultPriceApplication  {
 	@Autowired
 	File_System File_System;
 
-	@Autowired
-	emailSender emailSender;
-	  
+ 	  
 	public void run( )   {
 
         System.out.println("ResultPriceApplication Job Started");

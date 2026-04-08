@@ -80,8 +80,8 @@ public class MainBootClass implements CommandLineRunner{
 	  PlBudgetDomesticApplication         	  PlBudgetDomesticApplication;
 	@Autowired
 	ResultDepApplication ResultDepApplication;
-	@Autowired
-	emailSender emailSender;
+	
+	
 
 	 @Value("${properties.file.path.outside.jar}")
 	 private  String propertiesFilePathOutSideJar;
@@ -92,19 +92,13 @@ public class MainBootClass implements CommandLineRunner{
 		
 	 
 	public static void main(String[] args) {
-		
-		 if (isInternetAvailable()) {
-			 System.out.println("Internet is available. Starting application...");
-	          
+	       
 		 
 		System.out.println("running  main()-");
 		
 		SpringApplication.run(MainBootClass.class, args);
 		System.out.println("running main() - completed");		
-		   } else {
-			   logger.info("------------------->>>>>>>> No internet connection. Application will NOT start <<<<<<<----------------------");
-	            System.err.println("No internet connection. Application will NOT start.");
-	        }
+ 
 	}
 
 //this below method is used so that if internet is available only then app starts
@@ -121,7 +115,8 @@ public class MainBootClass implements CommandLineRunner{
 	    }
 	}
 	
-	
+	emailSender emailSender=null;
+	boolean trueIfInternetAvailable=false;
 	@Override
 	public void run(String... args) throws Exception {
 		long maxHeap = Runtime.getRuntime().maxMemory();
@@ -130,6 +125,24 @@ public class MainBootClass implements CommandLineRunner{
         String logAvailable=null;
     	String batchId=null;
         String sendEmailTo=null;
+        
+        
+        //''''''''''start'''''''''''''
+        //creating emailSender class object only if internet is available, and setting true in trueIfInternetAvailable variable
+        //not at line where calling the methods of emailSender class first check if trueIfInternetAvailable variable is true then call method of
+        //emailSender class to send email
+        if(isInternetAvailable()) {
+        	emailSender=new emailSender(applicationPropertiesService);
+        	trueIfInternetAvailable=true;
+        	System.err.println("internet is available email will be sent");
+        	
+        }else {
+        	  logger.info("------------------->>>>>>>> No internet connection, running jobs without sending email <<<<<<<----------------------");
+	            System.err.println("No internet connection, running jobs without sending email");
+        }
+        //''''''''''end'''''''''''
+        
+        
         try {
         	
         	
@@ -157,14 +170,14 @@ public class MainBootClass implements CommandLineRunner{
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm        		
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Units", batchId, sendEmailTo, logMessage);
+        	if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Units", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
         	  }else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
         		//if "no.logs.areNot.present" their means no, then send  success email  
                    	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Units", batchId, sendEmailTo);
+        		  if(trueIfInternetAvailable) 	emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Units", batchId, sendEmailTo);
     
         	}//111111111.running "ResultUnitsApplication JOB" END
         	  System.gc();
@@ -181,14 +194,14 @@ public class MainBootClass implements CommandLineRunner{
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm        		
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Parts", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Parts", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
         	  }else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
         		//if "no.logs.areNot.present" their means no, then send  success email  
                    	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Parts", batchId, sendEmailTo);
+        		  if(trueIfInternetAvailable)emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Parts", batchId, sendEmailTo);
     
         	}//22222222222.running "ResultPartsApplication JOB" END
         	  System.gc();
@@ -203,14 +216,14 @@ public class MainBootClass implements CommandLineRunner{
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
         		
               	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm  		
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Price", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Price", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
         	  }else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
         		//if "no.logs.areNot.present" their means no, then send  success email  
                	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm    
-        	emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Price", batchId, sendEmailTo);
+        		  if(trueIfInternetAvailable)emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Price", batchId, sendEmailTo);
     
         	}//3333333333333333.running "ResultPriceApplication JOB" END
         	  System.gc();
@@ -227,7 +240,7 @@ public class MainBootClass implements CommandLineRunner{
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
         		
                	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm 		
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Trans Packing", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Trans Packing", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
@@ -235,7 +248,7 @@ public class MainBootClass implements CommandLineRunner{
         		//if "no.logs.areNot.present" their means no, then send  success email  
            
         	        	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Trans Packing", batchId, sendEmailTo);
+        		  if(trueIfInternetAvailable)emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Trans Packing", batchId, sendEmailTo);
     
         	}//44444444444444.running "ResultTransPackingApplication JOB" END
         	  System.gc();
@@ -251,7 +264,7 @@ public class MainBootClass implements CommandLineRunner{
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
         		
                 	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm		
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Royalty", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Royalty", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
@@ -259,7 +272,7 @@ public class MainBootClass implements CommandLineRunner{
         		//if "no.logs.areNot.present" their means no, then send  success email  
            
         	        	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Royalty", batchId, sendEmailTo);
+        		  if(trueIfInternetAvailable)emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Royalty", batchId, sendEmailTo);
     
         	}//55555555555.running "ResultRoyaltyApplication JOB" END    	
         	  System.gc();
@@ -276,14 +289,14 @@ public class MainBootClass implements CommandLineRunner{
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
         		
         		        	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Dep", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Dep", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
         	}else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
         		//if "no.logs.areNot.present" their means no, then send  success email  
                    	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Dep", batchId, sendEmailTo);
+        		if(trueIfInternetAvailable)emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Dep", batchId, sendEmailTo);
     
         	}//6666666666666666.running "ResultDepApplication JOB" END    
         	  System.gc();
@@ -315,7 +328,7 @@ public class MainBootClass implements CommandLineRunner{
 */    
     
 
-    
+  
         	//888888888888.running "ResultProAssApplication JOB"
         	ResultProAssApplication.run();
         			//check if .properties have logs.
@@ -325,7 +338,7 @@ public class MainBootClass implements CommandLineRunner{
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
         		        	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Pro Ass", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Pro Ass", batchId, sendEmailTo, logMessage);
         		  
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
@@ -333,7 +346,7 @@ public class MainBootClass implements CommandLineRunner{
         	  }else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
         		//if "no.logs.areNot.present" their means no, then send  success email  
                    	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        		  emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Pro Ass", batchId, sendEmailTo);
+        		  if(trueIfInternetAvailable)emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Pro Ass", batchId, sendEmailTo);
         	
     
         	}//888888888888.running "ResultProAssApplication JOB" END
@@ -353,14 +366,14 @@ public class MainBootClass implements CommandLineRunner{
         		
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Expense", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Expense", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
         	  }else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
         		//if "no.logs.areNot.present" their means no, then send  success email  
               	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm        		  
-        		  emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Expense", batchId, sendEmailTo);
+        		  if(trueIfInternetAvailable)emailSender.	sendSuccessEmailWithExcelJobTracketData("Result Expense", batchId, sendEmailTo);
     
         	}//7777777777777777777.running "ResultExpenseApplication JOB" END
         	  System.gc();
@@ -382,14 +395,14 @@ public class MainBootClass implements CommandLineRunner{
           		
           		
           	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-          	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Pl Budget Domestic", batchId, sendEmailTo, logMessage);
+          		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Pl Budget Domestic", batchId, sendEmailTo, logMessage);
           	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
           	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
           	applicationPropertiesService.setProperty("logs.message","");	
           	  }else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
           		//if "no.logs.areNot.present" their means no, then send  success email  
                 	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm        		  
-          		  emailSender.	sendSuccessEmailWithExcelJobTracketData("Pl Budget Domestic", batchId, sendEmailTo);
+          		if(trueIfInternetAvailable)emailSender.	sendSuccessEmailWithExcelJobTracketData("Pl Budget Domestic", batchId, sendEmailTo);
       
           	}//999999999999999999999999.running "        	  PlBudgetDomesticApplication JOB" END
           	  System.gc();
@@ -410,14 +423,14 @@ public class MainBootClass implements CommandLineRunner{
         		
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Pl Budget Export", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Pl Budget Export", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
         	  }else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
         		//if "no.logs.areNot.present" their means no, then send  success email  
               	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm        		  
-        		  emailSender.	sendSuccessEmailWithExcelJobTracketData("Pl Budget Export", batchId, sendEmailTo);
+        		if(trueIfInternetAvailable)  emailSender.	sendSuccessEmailWithExcelJobTracketData("Pl Budget Export", batchId, sendEmailTo);
     
         	}//10.running "        	  PlBudgetExportApplication JOB" END
         	  System.gc();
@@ -434,14 +447,14 @@ public class MainBootClass implements CommandLineRunner{
         		
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
-        	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Fund Flow", batchId, sendEmailTo, logMessage);
+        		if(trueIfInternetAvailable) emailSender.sendFailEmailWithExcelJobTracketDataANDLogMessages("Fund Flow", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
         	  }else if("no.logs.areNot.present".equalsIgnoreCase(logAvailable) ){ 
         		//if "no.logs.areNot.present" their means no, then send  success email  
               	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm        		  
-        		  emailSender.	sendSuccessEmailWithExcelJobTracketData("Fund Flow", batchId, sendEmailTo);
+        		  if(trueIfInternetAvailable)  emailSender.	sendSuccessEmailWithExcelJobTracketData("Fund Flow", batchId, sendEmailTo);
     
         	}//11.running "        	  FundFlowApplication JOB" END
         	  System.gc();

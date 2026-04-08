@@ -44,9 +44,7 @@ public class PlBudgetExportApplication  {
 	Dynamic_File_System Dynamic_File_System;
 	@Autowired
 	File_System File_System;
-	@Autowired
-	emailSender emailSender;
-	 
+	  
 	public void run( )   {
 
         System.out.println("PlBudgetExportApplication Job Started");

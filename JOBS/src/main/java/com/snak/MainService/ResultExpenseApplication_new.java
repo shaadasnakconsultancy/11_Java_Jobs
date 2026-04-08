@@ -51,8 +51,6 @@ public class ResultExpenseApplication_new  {
 	Dynamic_File_System Dynamic_File_System;
 	@Autowired
 	File_System File_System;
-	@Autowired
-	emailSender emailSender;
 	 
  
 	public void run( )   {

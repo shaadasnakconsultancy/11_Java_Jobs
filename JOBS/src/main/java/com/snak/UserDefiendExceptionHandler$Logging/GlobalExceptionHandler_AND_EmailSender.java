@@ -16,9 +16,9 @@ import com.snak.Services.emailSender;
 public class GlobalExceptionHandler_AND_EmailSender {
 
 	static Logger logger=LoggerFactory.getLogger(GlobalExceptionHandler_AND_EmailSender.class);
-	@Autowired
-	emailSender emailSender;
-	
+//	@Autowired
+//	emailSender emailSender;
+//	
 
 	 
 	@Value("${properties.file.path.outside.jar}")

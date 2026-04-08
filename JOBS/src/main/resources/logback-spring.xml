@@ -3,7 +3,7 @@
 
     <!-- Log directory -->
      
-    <property name="LOG_HOME" value="E:/JobExcelFiles/Java JobExelFiles/JAVA JOB Archive/log_from_jobs/logs"/>
+    <property name="LOG_HOME" value="C:/JobExcelFiles/Java JobExelFiles/JAVA JOB Archive/log_from_jobs/logs"/>
 
     <!-- ================= FILE APPENDER ================= -->
     <!-- Same as your old RollingFileAppender -->
