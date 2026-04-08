@@ -10,14 +10,13 @@ directory.path=E\:\\JobExcelFiles\\Java JobExelFiles\\P&L\\
 directory.path.fundflow=E\:\\JobExcelFiles\\Java JobExelFiles\\Fund Flow\\Fund Flow\\
 directory.path.plbudget=E\:\\JobExcelFiles\\Java JobExelFiles\\pl budget domestic and export\\
 directory.path.resultexpense=E\:\\JobExcelFiles\\Java JobExelFiles\\result expense\\Result Expense\\
-job.batch.id=100
+job.batch.id=227
 logging.level.root=DEBUG
 logs.message=
 logs.present=no.logs.areNot.present
-
-properties.file.path.outside.jar=E\:/JobExcelFiles/Java JobExelFiles/migrate java jobs/Executable/config/application.properties
+properties.file.path.outside.jar=E\:/Users/ShaadAnsari/Downloads/WORK/Eclipse Workspaces/JOBS(all merged)/JOBS/src/main/resources/application.properties
 send.email.from=shaada@snakconsultancy.com
-send.email.to=mdshaadansari5@gmail.com
+send.email.to=shaada@snakconsultancy.com
 spring.application.name=JAVAJOBS
 spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
 spring.datasource.password=SnaK@12345I

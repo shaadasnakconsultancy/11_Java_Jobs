@@ -2,7 +2,7 @@ log4j.rootLogger=INFO,  WebAppAppender
 
 # Log Root location
 
-log_root_location=E:/JobExcelFiles/Java JobExelFiles/JAVA JOB Archive/log_from_jobs/logs
+log_root_location=C:/JobExcelFiles/Java JobExelFiles/JAVA JOB Archive/log_from_jobs/logs
 
 ##### WebAppAppender
 ### Set up the WebAppAppender for logging into XMLConversionWebApp.log
@@ -18,5 +18,5 @@ log4j.appender.WebAppAppender.MaxBackupIndex=500
 log4j.appender.WebAppAppender.layout=org.apache.log4j.PatternLayout
 #log4j.appender.WebAppAppender.File=${log_root_location}/WorkingPlan.log
 
-log4j.appender.WebAppAppender.File=E:/JobExcelFiles/Java JobExelFiles/JAVA JOB Archive/log_from_jobs/logs/JAVA_JOB_LOGS.log
+log4j.appender.WebAppAppender.File=C:/JobExcelFiles/Java JobExelFiles/JAVA JOB Archive/log_from_jobs/logs/JAVA_JOB_LOGS.log
 log4j.appender.WebAppAppender.layout.ConversionPattern=%r %-21d{dd MMM yyyy HH:mm:ss} [%t] %-7p %c %x - %m%n

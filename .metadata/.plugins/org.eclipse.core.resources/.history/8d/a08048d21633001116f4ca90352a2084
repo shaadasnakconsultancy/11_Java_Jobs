@@ -14,8 +14,7 @@ job.batch.id=100
 logging.level.root=DEBUG
 logs.message=
 logs.present=no.logs.areNot.present
-
-properties.file.path.outside.jar=E\:/JobExcelFiles/Java JobExelFiles/migrate java jobs/Executable/config/application.properties
+properties.file.path.outside.jar=E\:/Users/ShaadAnsari/Downloads/WORK/Eclipse Workspaces/JOBS(all merged)/JOBS/src/main/resources/application.properties
 send.email.from=shaada@snakconsultancy.com
 send.email.to=mdshaadansari5@gmail.com
 spring.application.name=JAVAJOBS
