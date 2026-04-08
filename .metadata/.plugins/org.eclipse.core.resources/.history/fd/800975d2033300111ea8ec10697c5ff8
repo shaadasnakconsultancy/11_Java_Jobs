@@ -1,0 +1,37 @@
+CREATE TABLE FundFlow (
+
+   -- Auto Generated SNO (Primary Key + Index)
+    SNO INT IDENTITY(1,1) NOT NULL,
+
+
+    [Date] VARCHAR(50) NULL,
+    [Day] VARCHAR(50)NULL,
+    [Month] VARCHAR(50) NULL,
+    [FY] VARCHAR(50) NULL,
+    [DataType] VARCHAR(50) NULL,
+
+    [Category] VARCHAR(50) NULL,
+
+    [ICICI_Investment_Payment (Capital)] VARCHAR(100) NULL,
+    [ICICI_For_Expenses_Payment_INR] VARCHAR(100) NULL,
+    [ICICI_For_Dealer_Received_INR] VARCHAR(100) NULL,
+    
+
+    [USD] VARCHAR(100) NULL,
+    [INR]VARCHAR(100) NULL,
+    [YEN] VARCHAR(100) NULL,
+    [JPY] VARCHAR(100) NULL,
+
+   [EURO] VARCHAR(100) NULL,
+
+  
+    [SBI] VARCHAR(100) NULL,
+    [SBI_INR] VARCHAR(100) NULL,
+
+    
+);
+ALTER TABLE FundFlow
+ADD CONSTRAINT PK_FundFlow_Sno
+PRIMARY KEY CLUSTERED (Sno);
+
+CREATE NONCLUSTERED INDEX FundFlow_NONCLUSTERED_Index ON FundFlow(FY,DataType,[Month]);

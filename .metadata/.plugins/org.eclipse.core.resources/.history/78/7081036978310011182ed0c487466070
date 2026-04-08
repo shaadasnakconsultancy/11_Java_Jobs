@@ -1,0 +1,35 @@
+package com.snak.dto;
+
+public class Fund_Flow {
+
+	 
+ 
+	private String Date;
+	private String Day;
+    private String Fy;
+    private String DataType;
+    private String MonthName;
+    
+    
+    private String Category;
+    
+    private String ICICI_Investment_Payment_Capital;
+    private String ICICI_For_Expenses_Payment_INR;
+    private String ICICI_For_Dealer_Received_INR;
+    
+    private String USD;
+    private String INR;
+    private String YEN;
+    private String JPY;
+   
+	private String EURO;
+    
+
+    
+
+
+    private String SBI_Column;
+    private String SBI_Column_INR;
+    
+
+}
