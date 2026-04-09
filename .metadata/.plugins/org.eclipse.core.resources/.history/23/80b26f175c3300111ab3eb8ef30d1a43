@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Log directory -->
+     
+    <property name="LOG_HOME" value="C:/JobExcelFiles/Java JobExelFiles/JAVA JOB Archive/log_from_jobs/logs"/>
+
+    <!-- ================= FILE APPENDER ================= -->
+    <!-- Same as your old RollingFileAppender -->
+    <appender name="WEBAPP" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/Java_Jobs_Log.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- Daily + size rollover (15MB) -->
+            <fileNamePattern>${LOG_HOME}/JobLog.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>15MB</maxFileSize>
+            <maxHistory>500</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <!-- Same pattern as Log4j -->
+            <!-- IMPORTANT: No %ex here → prevents full stacktrace -->
+    		<!-- Added extra %n to create blank line between log entries -->
+   <pattern> %-21d{dd MMM yyyy HH:mm:ss} [%thread] %-5level %logger - %msg%n-------------------------------%n%n</pattern>
+</encoder>
+        
+    </appender>
+
+
+    <!-- ================= DISABLE SPRING BOOT NOISE ================= -->
+    <!-- These stop auto framework logs -->
+    <logger name="org.springframework" level="OFF"/>
+    <logger name="org.hibernate" level="OFF"/>
+    <logger name="org.apache" level="OFF"/>
+    <logger name="ch.qos.logback" level="OFF"/>
+
+
+    <!-- ================= YOUR APPLICATION LOGGING ================= -->
+    <!-- Equivalent to: log4j.category.com.mazda=INFO,WebAppAppender -->
+    <logger name="com.snak" level="INFO" additivity="false">
+        <appender-ref ref="WEBAPP"/>
+    </logger>
+
+
+    <!-- ================= ROOT LOGGER ================= -->
+    <!-- Do NOT log anything else -->
+    <root level="OFF">
+        <appender-ref ref="WEBAPP"/>
+    </root>
+
+</configuration>
