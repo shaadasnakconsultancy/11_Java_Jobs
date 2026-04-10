@@ -32,7 +32,7 @@ import com.snak.Services.LoggerCLass;
 import com.snak.Services.ResultunitsEndBoundedExcelReader;
 import com.snak.Services.applicationPropertiesService;
 import com.snak.Services.emailSender;
-import com.snak.UserDefiendExceptionHandler$Logging.GlobalExceptionHandler_AND_EmailSender;
+import com.snak.Services.log_maintaining_for_all_jobs;
 
 @SpringBootApplication
 public class MainBootClass implements CommandLineRunner{
@@ -70,9 +70,7 @@ public class MainBootClass implements CommandLineRunner{
 	
 	@Autowired
 	ResultRoyaltyApplication ResultRoyaltyApplication;
-	
-	@Autowired
-	ResultExpenseApplication ResultExpenseApplication;
+	 
 	@Autowired
 	ResultExpenseApplication_new ResultExpenseApplication_new;
 	
@@ -116,6 +114,7 @@ public class MainBootClass implements CommandLineRunner{
 	}
 	
 	emailSender emailSender=null;
+	log_maintaining_for_all_jobs log_maintaining_for_all_jobs =null;
 	boolean trueIfInternetAvailable=false;
 	@Override
 	public void run(String... args) throws Exception {
@@ -124,8 +123,8 @@ public class MainBootClass implements CommandLineRunner{
         System.out.println("starting all Jobs");
         String logAvailable=null;
     	String batchId=null;
-        String sendEmailTo=null;
-        
+    	String allLogMessageForMaintainingInTXTFile="";
+    	String sendEmailTo=null;
         
         //''''''''''start'''''''''''''
         //creating emailSender class object only if internet is available, and setting true in trueIfInternetAvailable variable
@@ -133,6 +132,7 @@ public class MainBootClass implements CommandLineRunner{
         //emailSender class to send email
         if(isInternetAvailable()) {
         	emailSender=new emailSender(applicationPropertiesService);
+        	
         	trueIfInternetAvailable=true;
         	System.err.println("internet is available email will be sent");
         	
@@ -168,7 +168,9 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
+        		//in below line adding all log messages in one String so that add all log in one txt file
         		
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Result Units related errors *************************************\n" + logMessage;
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm        		
         	if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Units", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
@@ -192,6 +194,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Result Parts related errors *************************************\n" + logMessage;
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm        		
         		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Parts", batchId, sendEmailTo, logMessage);
@@ -214,6 +218,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Result Price related errors *************************************\n" + logMessage;
         		
               	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm  		
         		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Price", batchId, sendEmailTo, logMessage);
@@ -238,6 +244,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Result Trans Packing related errors *************************************\n" + logMessage;
         		
                	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm 		
         		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Trans Packing", batchId, sendEmailTo, logMessage);
@@ -262,6 +270,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Result Royalty related errors *************************************\n" + logMessage;
         		
                 	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm		
         		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Royalty", batchId, sendEmailTo, logMessage);
@@ -287,6 +297,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Result Dep related errors *************************************\n" + logMessage;
         		
         		        	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
         		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Dep", batchId, sendEmailTo, logMessage);
@@ -312,7 +324,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
-        		
+        		        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile+"\n\n\n"+logMessage;
         		        	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
         	emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Pro Ass", batchId, sendEmailTo, logMessage);
         	//and then setting in .properties that "no.logs.areNot.present", so for next job call below will again check and precess on condition
@@ -337,6 +350,9 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Result Pro Ass related errors *************************************\n" + logMessage;
+        		
         		        	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
         		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Pro Ass", batchId, sendEmailTo, logMessage);
         		  
@@ -363,7 +379,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
-        		
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Result Expense related errors *************************************\n" + logMessage;
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
         		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Result Expense", batchId, sendEmailTo, logMessage);
@@ -392,7 +409,8 @@ public class MainBootClass implements CommandLineRunner{
           			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
           		//getting logs
           		String logMessage=applicationPropertiesService.getProperty("logs.message");
-          		
+        		//in below line adding all log messages in one String so that add all log in one txt file
+          		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Budget Domestic related errors *************************************\n" + logMessage;
           		
           	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
           		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Pl Budget Domestic", batchId, sendEmailTo, logMessage);
@@ -420,7 +438,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
-        		
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Budget Export related errors *************************************\n" + logMessage;
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
         		if(trueIfInternetAvailable)emailSender.	sendFailEmailWithExcelJobTracketDataANDLogMessages("Pl Budget Export", batchId, sendEmailTo, logMessage);
@@ -444,7 +463,8 @@ public class MainBootClass implements CommandLineRunner{
         			//if "yes.logs.are.present" their means yes, then send failiur email with those logs
         		//getting logs
         		String logMessage=applicationPropertiesService.getProperty("logs.message");
-        		
+        		//in below line adding all log messages in one String so that add all log in one txt file
+        		allLogMessageForMaintainingInTXTFile=allLogMessageForMaintainingInTXTFile + "\n\n\n************************************* below are Fund Flow related errors *************************************\n" + logMessage;
         		
         	//jobName argument in below method have to be same as we set in sheetName column in excel_job_tracker table at time of maintaining excel_job_tracker table in programm
         		if(trueIfInternetAvailable) emailSender.sendFailEmailWithExcelJobTracketDataANDLogMessages("Fund Flow", batchId, sendEmailTo, logMessage);
@@ -460,7 +480,17 @@ public class MainBootClass implements CommandLineRunner{
         	  System.gc();
         	
         	      	  
-      	  
+      	  //maintaing log for all jobs in one .txt file, if log in in string "allLogMessageForMaintainingInTXTFile" means log in their in any of the jobs
+       	  //so adding html type table of job status in txt along with log, and if log is not their in any then adding html type table with only job status from excel job tracker 
+        	  log_maintaining_for_all_jobs=new log_maintaining_for_all_jobs(applicationPropertiesService);
+        	  
+        	  if(allLogMessageForMaintainingInTXTFile.length()>10) {
+        		  log_maintaining_for_all_jobs.logIn_TxtFile_for_Fail_WithExcelJobTracketDataANDLogMessages(batchId, allLogMessageForMaintainingInTXTFile);
+        	  }else {
+        		  log_maintaining_for_all_jobs.logIn_TxtFile_for_SuccessWithExcelJobTracketData(batchId);
+        	  }
+        	  
+        	  //
       	  
         	  
         	  

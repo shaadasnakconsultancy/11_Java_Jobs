@@ -3,7 +3,7 @@
 
     <!-- Log directory -->
      
-    <property name="LOG_HOME" value="E:/JobExcelFiles/Java JobExelFiles/JAVA JOB Archive/log_from_jobs/logs"/>
+    <property name="LOG_HOME" value="C:/JobExcelFiles/Java JobExelFiles/JAVA JOB LOGS"/>
 
     <!-- ================= FILE APPENDER ================= -->
     <!-- Same as your old RollingFileAppender -->
@@ -37,15 +37,29 @@
 
     <!-- ================= YOUR APPLICATION LOGGING ================= -->
     <!-- Equivalent to: log4j.category.com.mazda=INFO,WebAppAppender -->
-    <logger name="com.snak" level="INFO" additivity="false">
+    <!--
+    <logger name="com.snak" level="INFO" additivity="false" >
         <appender-ref ref="WEBAPP"/>
+    </logger> 
+    -->
+    
+    <logger name="com.snak" level="OFF"  >
+       <!--  <appender-ref ref="WEBAPP"/>-->
     </logger>
+    
 
 
     <!-- ================= ROOT LOGGER ================= -->
     <!-- Do NOT log anything else -->
-    <root level="OFF">
+
+<!--
+<root level="OFF">
         <appender-ref ref="WEBAPP"/>
+    </root>
+    
+    -->
+<root level="OFF">
+    
     </root>
 
 </configuration>

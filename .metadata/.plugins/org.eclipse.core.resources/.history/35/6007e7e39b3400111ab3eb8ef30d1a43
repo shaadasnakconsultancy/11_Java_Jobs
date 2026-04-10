@@ -1,0 +1,577 @@
+package com.snak.Services;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.snak.dto.excelJobTrackerDTO;
+
+
+//@Service
+public class log_maintaining_for_all_jobs {
+
+	static String databaseurl=null;
+	static String username=null;
+	static String password=null;
+	static applicationPropertiesService applicationPropertiesService=null;
+ 
+	static Logger logger=LoggerFactory.getLogger(log_maintaining_for_all_jobs.class); 
+	
+	
+	 
+	
+	    public log_maintaining_for_all_jobs(applicationPropertiesService applicationPropertiesService) {
+	    	  this.applicationPropertiesService = applicationPropertiesService;
+
+	    	    databaseurl = applicationPropertiesService.getProperty("spring.datasource.url");
+	    	    username = applicationPropertiesService.getProperty("spring.datasource.username");
+	    	    password = applicationPropertiesService.getProperty("spring.datasource.password");
+
+	    	
+	    	
+	    }
+	
+	     
+
+
+public String logIn_TxtFile_for_SuccessWithExcelJobTracketData(String batchId){
+	int totalDeletedRows=0;
+
+CallableStatement cstmt =null;
+String sql=null;
+PreparedStatement deleteStmt=null;
+PreparedStatement pstmt=null;
+Connection conn = null;
+try {
+
+
+System.out.println("sendSuccessEmailWithExcelJobTracketData");
+//1.    if DB with name 'FinanceDashboard' does not exist
+
+	System.out.println("in try");
+	conn = DriverManager.getConnection(databaseurl,username,password);
+	conn.setAutoCommit(false);
+	sql="SELECT DB_NAME()";
+	pstmt= conn.prepareStatement(sql);
+	ResultSet rs = pstmt.executeQuery();
+	while (rs.next()) {
+	    System.err.println("Connected DB = " + rs.getString(1));
+	}
+	
+	
+	////checking below is that DB with "FinanceDashboard" name exist or not
+	sql="SELECT name FROM sys.databases WHERE  name='FinanceDashboard' ";
+	pstmt= conn.prepareStatement(sql);
+	pstmt.execute();
+	
+	if(!pstmt.getResultSet().next()) {
+		
+		System.out.println("DB does not exist  ");
+		
+		//log it
+	      logger.info("database doesnot exist in sqlserver with name -> "+ "FinanceDashboard" +" so cant take data from table 'Excel_Job_Tracker'  to attach in email in emailSender.class at sendSuccessEmailWithExcelJobTracketData() method");
+	      throw new Exception();
+	 /*
+	      GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+                    "ResultExpense_repository_new.class",
+                    "match_FY$Actual_Remove_Insert()",
+                  file.getName(),
+                    "database doesnot exist in sqlserver with name -> "+ "FinanceDashboard" +"",
+                   ""
+                    
+         )   );
+	      return null;
+		//System.exit(0);
+	  */
+
+	}else {
+		System.out.println("DB FinanceDashboard is present ");
+	}
+//	if(!pstmt.getResultSet().next()) {
+//		
+//		 return null;
+//	}else { 
+//	}
+
+	//END//checking below is that DB with "FinanceDashboard" name exist or not
+	
+	
+	////checking below is that tabel with "PL_ResultRoyalty" name exist or not
+	sql = "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Excel_Job_Tracker'";
+	pstmt = conn.prepareStatement(sql);
+	  rs = pstmt.executeQuery();
+
+	if (!rs.next()) {
+
+	    System.out.println("Table does not exist");
+
+	    logger.info("Table does not exist in FinanceDashboard DB with name -> Excel_Job_Tracker  at the point of taking data and attaching to email in emailSender.class at sendSuccessEmailWithExcelJobTracketData() method" );
+	      throw new Exception();
+	    /*
+	    GlobalExceptionHandler_AND_EmailSender.handleException(
+	        new PrintLog_AND_SendEmail_Exception(
+	            "ResultExpense_repository_new.class",
+	            "match_FY$Actual_Remove_Insert()",
+	            file.getName(),
+	            "Table does not exist in SQL Server with name -> Excel_Job_Tracker",
+	            ""
+	        )
+	    );
+
+	    return null;
+
+ */
+	} else { 
+	    System.out.println("Table Excel_Job_Tracker is present");
+	}
+	//END//checking below is that tabel with "Excel_Job_Tracker" name exist or not
+	
+	
+
+		
+	/*
+	FileName	nvarchar
+	FullPath	nvarchar
+	LastModified	datetime2
+	ProcessedAt	datetime2
+	SheetName	nvarchar
+	InsertedRows	int
+	DeletedRows	int
+	ErrorMessages	nvarchar
+	BatchID	bigint
+	*/
+//3.	 storing excel data of fy and Actual in table in batches of 100
+		    sql="select BatchID,FileName,	FullPath,ProcessedAt,SheetName,InsertedRows,DeletedRows,ErrorMessages from Excel_Job_Tracker"
+		    		+ " where BatchID=?  ";
+		
+		 
+		pstmt=conn.prepareStatement(sql);
+//		Set parameters BEFORE executing
+		
+		pstmt.setInt(1,Integer.parseInt(batchId));
+		
+		
+		boolean b=pstmt.execute();
+		List<excelJobTrackerDTO> list = new ArrayList<>();
+		if(b) {
+			ResultSet resultset=pstmt.getResultSet();
+//			excelJobTrackerDTO header = new excelJobTrackerDTO();
+//			header.setBatchID("BatchID");
+//			header.setFileName("FileName");
+//			header.setFullPath("FullPath");
+//			header.setProcessedAt("ProcessedAt");
+//			header.setSheetName("SheetName");
+//			header.setInsertedRows("InsertedRows");
+//			header.setDeletedRows("DeletedRows");
+//			header.setErrorMessages("ErrorMessages");
+//
+//			list.add(header);
+			if(resultset.next()) {
+				do {
+					excelJobTrackerDTO obj = new excelJobTrackerDTO();
+
+				    obj.setBatchID(String.valueOf(resultset.getInt(1)));
+				    obj.setFileName(resultset.getString(2));
+				    obj.setFullPath(resultset.getString(3));
+				    obj.setProcessedAt(String.valueOf(resultset.getTimestamp(4)));
+				    obj.setSheetName(resultset.getString(5));
+				    obj.setInsertedRows(String.valueOf(resultset.getInt(6)));
+				    obj.setDeletedRows(String.valueOf(resultset.getInt(7)));
+				    obj.setErrorMessages(resultset.getString(8));
+
+				    list.add(obj);
+
+					
+					
+					
+				}while(resultset.next());
+			}
+			
+			
+		}
+//adding these excel_job_tracker data to email and sending it
+		
+		
+		
+		String jobStatusTxtFileFolder=applicationPropertiesService.getProperty("job.status.txt.file.folder");
+		
+		TextTableGenerator generator = new TextTableGenerator();
+
+		String tableText = generator.convertToTextTable(list);
+		appendHtmlToTxtFile(jobStatusTxtFileFolder, tableText,null);
+		
+//		sendEmail(sendEmailTo, jobName +" job success for batchID "+batchId, emailBody);
+		list.clear();
+			
+ 
+/* COMMIT TRANSACTION */
+		conn.commit();
+		
+	}
+	catch(Exception e){
+		//sending success email without excel_job_tracker table data
+//		sendEmail(sendEmailTo, jobName +" job success for batchID "+batchId, "job is succcessfull but problem in taking data from excel_job_tracker table and putting it in this success email, just see success data of this job in excel_job_tracker table");
+		
+		e.printStackTrace() ;
+		   logger.info("Exception in doing DB task in sendSuccessEmailWithExcelJobTracketData() method > "+ log_maintaining_for_all_jobs.class.getName()+ "  ");
+
+System.out.println("catch block");
+			  
+		try
+		{
+			if(null!=conn)
+				conn.rollback();
+		}
+		catch(SQLException e1)
+		{
+			logger.info("connection is already null, cant roll back in sendSuccessEmailWithExcelJobTracketData.class");
+		}
+		/*
+		GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+                    "ResultExpense_repository_new.class",
+                    "match_FY$Actual_Remove_Insert()",
+                    file.getName(),
+                    "not able to delete or insert in table 'PL_ResultExpense' in DB -> "+ "FinanceDashboard" +"",
+                   "so processing other sheets data and storing it in DB -> "+e.toString()+ "  " +e.getMessage()
+                    
+           ) );
+		return null;
+//		System.exit(0);
+/// 
+ */
+	}
+	finally
+	{
+		try
+		{
+			if(null!=pstmt)
+				pstmt.close();
+			if(null!=conn)
+				conn.close();
+		}
+		catch(SQLException e)
+		{
+
+			logger.info("connection and preparedStatement is already null, cant roll back in sendSuccessEmailWithExcelJobTracketData.class");
+		}
+		pstmt = null;
+		
+	}
+return "completed";
+}
+
+
+
+
+public String logIn_TxtFile_for_Fail_WithExcelJobTracketDataANDLogMessages(String batchId,String LogMessage){
+	int totalDeletedRows=0;
+
+CallableStatement cstmt =null;
+String sql=null;
+PreparedStatement deleteStmt=null;
+PreparedStatement pstmt=null;
+Connection conn = null;
+try {
+
+
+System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
+//1.    if DB with name 'FinanceDashboard' does not exist
+
+	System.out.println("in try");
+	conn = DriverManager.getConnection(databaseurl,username,password);
+	conn.setAutoCommit(false);
+	sql="SELECT DB_NAME()";
+	pstmt= conn.prepareStatement(sql);
+	ResultSet rs = pstmt.executeQuery();
+	while (rs.next()) {
+	    System.err.println("Connected DB = " + rs.getString(1));
+	}
+	
+	
+	////checking below is that DB with "FinanceDashboard" name exist or not
+	sql="SELECT name FROM sys.databases WHERE  name='FinanceDashboard' ";
+	pstmt= conn.prepareStatement(sql);
+	pstmt.execute();
+	
+	if(!pstmt.getResultSet().next()) {
+		
+		System.out.println("DB does not exist  ");
+		
+		//log it
+	      logger.info("database doesnot exist in sqlserver with name -> "+ "FinanceDashboard" +" so cant take data from table 'Excel_Job_Tracker'  to attach in email in emailSender.class at sendSuccessEmailWithExcelJobTracketData() method");
+	      throw new Exception();
+	 /*
+	      GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+                    "ResultExpense_repository_new.class",
+                    "match_FY$Actual_Remove_Insert()",
+                  file.getName(),
+                    "database doesnot exist in sqlserver with name -> "+ "FinanceDashboard" +"",
+                   ""
+                    
+         )   );
+	      return null;
+		//System.exit(0);
+	  */
+
+	}else {
+		System.out.println("DB FinanceDashboard is present ");
+	}
+//	if(!pstmt.getResultSet().next()) {
+//		
+//		 return null;
+//	}else { 
+//	}
+
+	//END//checking below is that DB with "FinanceDashboard" name exist or not
+	
+	
+	////checking below is that tabel with "PL_ResultRoyalty" name exist or not
+	sql = "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Excel_Job_Tracker'";
+	pstmt = conn.prepareStatement(sql);
+	  rs = pstmt.executeQuery();
+
+	if (!rs.next()) {
+
+	    System.out.println("Table does not exist");
+
+	    logger.info("Table does not exist in FinanceDashboard DB with name -> Excel_Job_Tracker  at the point of taking data and attaching to email in emailSender.class at sendFailEmailWithExcelJobTracketDataANDLogMessages() method" );
+	      throw new Exception();
+	    /*
+	    GlobalExceptionHandler_AND_EmailSender.handleException(
+	        new PrintLog_AND_SendEmail_Exception(
+	            "ResultExpense_repository_new.class",
+	            "match_FY$Actual_Remove_Insert()",
+	            file.getName(),
+	            "Table does not exist in SQL Server with name -> Excel_Job_Tracker",
+	            ""
+	        )
+	    );
+
+	    return null;
+
+ */
+	} else { 
+	    System.out.println("Table Excel_Job_Tracker is present");
+	}
+	//END//checking below is that tabel with "Excel_Job_Tracker" name exist or not
+	
+	
+
+		
+	/*
+	FileName	nvarchar
+	FullPath	nvarchar
+	LastModified	datetime2
+	ProcessedAt	datetime2
+	SheetName	nvarchar
+	InsertedRows	int
+	DeletedRows	int
+	ErrorMessages	nvarchar
+	BatchID	bigint
+	*/
+//3.	 storing excel data of fy and Actual in table in batches of 100
+		    sql="select BatchID,FileName,	FullPath,ProcessedAt,SheetName,InsertedRows,DeletedRows,ErrorMessages from Excel_Job_Tracker"
+		    		+ " where BatchID=?  ";
+		
+		 
+		pstmt=conn.prepareStatement(sql);
+//		Set parameters BEFORE executing
+		
+		pstmt.setInt(1,Integer.parseInt(batchId));
+		
+		
+		boolean b=pstmt.execute();
+		List<excelJobTrackerDTO> list = new ArrayList<>();
+		if(b) {
+			ResultSet resultset=pstmt.getResultSet();
+//			excelJobTrackerDTO header = new excelJobTrackerDTO();
+//			header.setBatchID("BatchID");
+//			header.setFileName("FileName");
+//			header.setFullPath("FullPath");
+//			header.setProcessedAt("ProcessedAt");
+//			header.setSheetName("SheetName");
+//			header.setInsertedRows("InsertedRows");
+//			header.setDeletedRows("DeletedRows");
+//			header.setErrorMessages("ErrorMessages");
+//
+//			list.add(header);
+			if(resultset.next()) {
+				do {
+					excelJobTrackerDTO obj = new excelJobTrackerDTO();
+
+
+				    obj.setBatchID(String.valueOf(resultset.getInt(1)));
+				    obj.setFileName(resultset.getString(2));
+				    obj.setFullPath(resultset.getString(3));
+				    obj.setProcessedAt(String.valueOf(resultset.getTimestamp(4)));
+				    obj.setSheetName(resultset.getString(5));
+				    obj.setInsertedRows(String.valueOf(resultset.getInt(6)));
+				    obj.setDeletedRows(String.valueOf(resultset.getInt(7)));
+				    obj.setErrorMessages(resultset.getString(8));
+
+				    list.add(obj);
+
+					
+					
+					
+				}while(resultset.next());
+			}
+			
+			
+		}
+//adding these excel_job_tracker data to email and sending it
+String jobStatusTxtFileFolder=applicationPropertiesService.getProperty("job.status.txt.file.folder");
+		
+		TextTableGenerator generator = new TextTableGenerator();
+
+		String tableText = generator.convertToTextTable(list);
+		appendHtmlToTxtFile(jobStatusTxtFileFolder, tableText,"\n log messages where problem occur in excel files are -> \n \n"+LogMessage);
+		
+//		sendEmail(sendEmailTo, jobName +" job fail status for batchID "+batchId, emailBody+"\n\n\n log messages where problem occur in programm are ->\n\n \n"+LogMessage);
+		list.clear();
+			
+ 
+/* COMMIT TRANSACTION */
+		conn.commit();
+		
+	}
+	catch(Exception e){
+		//sending success email without excel_job_tracker table data
+//		sendEmail(sendEmailTo, jobName +" job fail status for batchID "+batchId," job is failing at some point and also problem in taking data from excel_job_tracker table and putting it in this job failiur email, just see failed data of this job in excel_job_tracker table \n\n \n log messages where problem occur in programm are -> \n"+LogMessage);
+		
+		e.printStackTrace() ;
+		   logger.info("Exception in doing DB task in sendSuccessEmailWithExcelJobTracketData() method > "+ log_maintaining_for_all_jobs.class.getName()+ "  ");
+
+System.out.println("catch block");
+			  
+		try
+		{
+			if(null!=conn)
+				conn.rollback();
+		}
+		catch(SQLException e1)
+		{
+			logger.info("connection is already null, cant roll back in sendSuccessEmailWithExcelJobTracketData.class");
+		}
+		/*
+		GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+                    "ResultExpense_repository_new.class",
+                    "match_FY$Actual_Remove_Insert()",
+                    file.getName(),
+                    "not able to delete or insert in table 'PL_ResultExpense' in DB -> "+ "FinanceDashboard" +"",
+                   "so processing other sheets data and storing it in DB -> "+e.toString()+ "  " +e.getMessage()
+                    
+           ) );
+		return null;
+//		System.exit(0);
+/// 
+ */
+	}
+	finally
+	{
+		try
+		{
+			if(null!=pstmt)
+				pstmt.close();
+			if(null!=conn)
+				conn.close();
+		}
+		catch(SQLException e)
+		{
+
+			logger.info("connection and preparedStatement is already null, cant roll back in sendSuccessEmailWithExcelJobTracketData.class");
+		}
+		pstmt = null;
+		
+	}
+return "completed";
+}
+
+public void appendHtmlToTxtFile(String filePath, String htmlContent,String logMessages) {
+
+    FileWriter fw = null;
+    BufferedWriter bw = null;
+
+    try {
+        File file = new File(filePath);
+
+        // ✅ Step 1: Create directory if not exists
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        // ✅ Step 2: Create file if not exists
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+
+        // ✅ Step 3: Append content
+        fw = new FileWriter(file, true); // true = append mode
+        bw = new BufferedWriter(fw);
+
+        bw.write("================start=====================");
+        bw.newLine();
+        bw.write("Execution Time: " + new java.util.Date());
+        bw.newLine();
+        bw.write(htmlContent);
+        bw.newLine();
+        bw.newLine();
+        if(logMessages!=null) { bw.write(logMessages);}
+        bw.newLine();
+        bw.write("=================end====================");
+        bw.newLine();
+        bw.newLine();
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            if (bw != null) bw.close();
+            if (fw != null) fw.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+
+
+
+
+
+/*
+public   String getRandomOtp() { 
+Random r=new Random();
+
+String str="";
+
+for(int i=1;i<=6;i++) {
+	
+
+if(i==4 || i==2 ) {
+	str+=(char)r.nextInt(97,122);
+
+}else if(i==3  || i==6) {
+		str+=(char)r.nextInt(65,90);		
+		
+	}else{
+		str+=r.nextInt(0,9);
+	}
+}	
+return str;
+}
+
+	
+	*/
+}

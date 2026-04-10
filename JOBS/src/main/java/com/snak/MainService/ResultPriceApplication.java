@@ -70,19 +70,21 @@ public class ResultPriceApplication  {
             //2. getting all excel data in List<Result_Units> from each file one by one
               for (File file : excelFileList) {
             	  file2=file;
+            		/*		2.1.  calling setFileName_FilePath_SheetName_BatchID() (Excel_Job_Tracker_TableInDB_Updater.class) to set these
+  				 * FileName, FilePath, SheetName, BatchID these data in Excel job tracker table
+  				 * then will call match_FY$Actual_Remove_Insert() to do DB operataion in which again call   method from class 
+  				 * (Excel_Job_Tracker_TableInDB_Updater.class)  to update row deleted column in Excel job tracker table and  update row inserted in Excel job tracker table
+   */
+    Excel_Job_Tracker_TableInDB_Updater.  setFileName_FilePath_SheetName_BatchID(file,"Result Price", currentBatchId);
          list=ResultPriceEndBoundedExcelReader.readDataBetweenEndMarkers(file);
              if(list==null) {
+            	 Excel_Job_Tracker_TableInDB_Updater.  updatingExcelJobTrackr_ErrorMessagesColumns(file,"Result Price",currentBatchId,"FAIL");
             	 continue;
              }
             
             //3.if FY and Actual is present in DB, then within one transaction remove data from DB having FY and Actual 
             //and insert data 
-     		/*		3.1.  calling setFileName_FilePath_SheetName_BatchID() (Excel_Job_Tracker_TableInDB_Updater.class) to set these
-				 * FileName, FilePath, SheetName, BatchID these data in Excel job tracker table
-				 * then will call match_FY$Actual_Remove_Insert() to do DB operataion in which again call   method from class 
-				 * (Excel_Job_Tracker_TableInDB_Updater.class)  to update row deleted column in Excel job tracker table and  update row inserted in Excel job tracker table
- */
-  Excel_Job_Tracker_TableInDB_Updater.  setFileName_FilePath_SheetName_BatchID(file,"Result Price", currentBatchId);
+     	
      completed=  ResultPrice_repository.match_FY$Actual_Remove_Insert(list,file);
             
             /*
@@ -97,7 +99,7 @@ public class ResultPriceApplication  {
         	   Excel_Job_Tracker_TableInDB_Updater.  updatingExcelJobTrackr_ErrorMessagesColumns(file,"Result Price",currentBatchId,"SUCCESS");
            	 
             }else if(completed==null){
-            	 Excel_Job_Tracker_TableInDB_Updater.  updatingExcelJobTrackr_ErrorMessagesColumns(file,"Result Price",currentBatchId,"FAIL");
+            	Excel_Job_Tracker_TableInDB_Updater.  updatingExcelJobTrackr_ErrorMessagesColumns(file,"Result Price",currentBatchId,"FAIL");
             	continue;	
             }      
            	//  repository.createRecords(getDummyList());

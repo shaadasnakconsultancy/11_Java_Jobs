@@ -52,7 +52,7 @@ public class  ResultunitsEndBoundedExcelReader{
 	                        "ResultUnitsEndBoundedExcelReader.class",
 	                        "readDataBetweenEndMarkers()",
 	                        excelFile.getName(),
-	                        "'Result Units Packing' sheet not found",
+	                        "'Result Units' sheet not found",
 	                        "Skipping this sheet"
 	                    )
 	                );

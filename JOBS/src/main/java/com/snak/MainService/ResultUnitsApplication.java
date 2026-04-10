@@ -65,25 +65,30 @@ public class ResultUnitsApplication  {
 
 
               String currentBatchId=applicationPropertiesService.getProperty("job.batch.id");
-              
+               
               
               
             //2. getting all excel data in List<Result_Units> from each file one by one
               for (File  file : excelFileList) {
-            	  file2= file; 
+            	  file2= file;
+            	  /*		2.1.  calling setFileName_FilePath_SheetName_BatchID() (Excel_Job_Tracker_TableInDB_Updater.class) to set these
+      			 * FileName, FilePath, SheetName, BatchID these data in Excel job tracker table
+      			 * then will call match_FY$Actual_Remove_Insert() to do DB operataion in which again call   method from class 
+      			 * (Excel_Job_Tracker_TableInDB_Updater.class)  to update row deleted column in Excel job tracker table and  update row inserted in Excel job tracker table
+      */
+      Excel_Job_Tracker_TableInDB_Updater.  setFileName_FilePath_SheetName_BatchID(file,"Result Units", currentBatchId);
+            	  
+            	  
+            	  
          list=ResultunitsEndBoundedExcelReader.readDataBetweenEndMarkers(file);
             if(list==null) {
+            	Excel_Job_Tracker_TableInDB_Updater.  updatingExcelJobTrackr_ErrorMessagesColumns(file,"Result Units",currentBatchId,"FAIL");
            	 continue;
             }
             
             //3.if FY and Actual is present in DB, then within one transaction remove data from DB having FY and Actual 
             //and insert data 
-    		/*		3.1.  calling setFileName_FilePath_SheetName_BatchID() (Excel_Job_Tracker_TableInDB_Updater.class) to set these
-			 * FileName, FilePath, SheetName, BatchID these data in Excel job tracker table
-			 * then will call match_FY$Actual_Remove_Insert() to do DB operataion in which again call   method from class 
-			 * (Excel_Job_Tracker_TableInDB_Updater.class)  to update row deleted column in Excel job tracker table and  update row inserted in Excel job tracker table
-*/
-Excel_Job_Tracker_TableInDB_Updater.  setFileName_FilePath_SheetName_BatchID(file,"Result Units", currentBatchId);
+    		
     completed=  Resultunits_repository.match_FY$Actual_Remove_Insert(list,file);
               /*
                * 3.2. then calling method from Excel_Job_Tracker_TableInDB_Updater.class in which we will check if their is any log being created 
