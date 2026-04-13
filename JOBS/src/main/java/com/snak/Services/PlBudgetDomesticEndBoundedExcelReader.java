@@ -85,7 +85,7 @@ System.out.println(sheet.getSheetName());
 	                         "PlBudgetDomesticEndBoundedExcelReader.class",
 	                         "readDataBetweenEndMarkers()",
 	                         excelFile.getName(),
-	                         "END marker not found in COLUMN or ROW in sheet"+sheetName+ "in excel file "+excelFile,
+	                         "END marker not found in COLUMN or ROW in sheet "+sheetName+ " in excel file "+excelFile,
 	                         " so for pl budget domestic skipping this file and processing others, Pl Budget excel should have sheet haveing 'domestic' in its name"
 	                         
 	              )   );

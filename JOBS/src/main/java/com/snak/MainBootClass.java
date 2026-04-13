@@ -120,6 +120,7 @@ public class MainBootClass implements CommandLineRunner{
 	boolean trueIfInternetAvailable=false;
 	@Override
 	public void run(String... args) throws Exception {
+		
 		  long start = System.nanoTime();
 		
 		long maxHeap = Runtime.getRuntime().maxMemory();
@@ -502,6 +503,7 @@ public class MainBootClass implements CommandLineRunner{
         	  
         	  
         //===============deleteing excel to archive====================================
+        	  System.err.println("deleteing files from path-> "+"directory.path.of.pl.budget");
         	  List<File> excelFileList = new ArrayList<>();
         	  
         	//$1 removing pl budget excel
@@ -513,6 +515,7 @@ public class MainBootClass implements CommandLineRunner{
               
               
               //$2  removing pl actual excel
+        	  System.err.println("deleteing files from path-> "+"directory.path.of.pl.actual");
             	//getting all .xlsx in all FY directory 
         	  
         	  excelFileList=  newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.pl.actual");
@@ -521,7 +524,8 @@ public class MainBootClass implements CommandLineRunner{
               
               
         	   
-              //$2  removing pl Expense excel
+              //$3  removing pl Expense excel
+        	  System.err.println("deleteing files from path-> "+"directory.path.of.pl.expense");
             	//getting all .xlsx in all FY directory 
         	  
         	  excelFileList=  newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.pl.expense");
@@ -530,7 +534,8 @@ public class MainBootClass implements CommandLineRunner{
         	  
         	  
         	   
-              //$2  removing fundflow fundstatus excel
+              //$4  removing fundflow fundstatus excel
+        	  System.err.println("deleteing files from path-> "+"directory.path.of.fundflow.fundstatus");
             	//getting all .xlsx in all FY directory 
         	  
         	  excelFileList=  newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.fundflow.fundstatus");

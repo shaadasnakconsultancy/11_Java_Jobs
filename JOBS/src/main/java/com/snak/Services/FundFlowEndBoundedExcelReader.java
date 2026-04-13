@@ -117,7 +117,8 @@ String monthlyValue=null;
 
 System.out.println(sheet.getSheetName());
 	            	    // Match pattern like Apr'23, Jan'24 etc. or even if apr, jan these exsist
-boolean isFullFormat = sheetName.matches("^[A-Za-z]{3}'\\d{2}$");
+//boolean isFullFormat = sheetName.matches("^[A-Za-z]{3}'\\d{2}$");
+boolean isFullFormat = sheetName.matches("^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'\\d{2}$");
 if (sheetName != null && sheetName.length() >= 3) {
 	sheetName = sheetName.substring(0, 3);// Apr
 }

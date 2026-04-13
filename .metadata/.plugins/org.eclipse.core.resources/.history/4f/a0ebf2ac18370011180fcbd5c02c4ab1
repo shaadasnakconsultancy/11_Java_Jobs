@@ -1,0 +1,23 @@
+#Updated on -
+#Mon Apr 13 14:36:33 IST 2026
+debug=true
+C:\Jobs\FY2027-28\FUNDFLOW\FUND_STATUS
+directory.path.of.fundflow.fundstatus=C\:\\Jobs\\FY2024-25\\FUNDFLOW\\FUND_STATUS\\
+directory.path.of.parent.folder.of.financialfolders=C\:\\Jobs\\
+directory.path.of.pl.actual=C\:\\Jobs\\FY2023-24\\PL\\ACTUAL\\
+directory.path.of.pl.budget=C\:\\Jobs\\FY2023-24\\PL\\BUDGET\\
+directory.path.of.pl.expense=C\:\\Jobs\\FY2023-24\\PL\\RESULT_EXPENSE\\
+job.batch.id=123
+job.status.txt.file.folder=C\:\\Jobs\\JOB_LOGS\\JAVA_JOBS_STATUS_REPORT.txt
+logging.level.root=DEBUG
+logs.message=123 -> 123 -> 123 -> 123 -> 123 -> 123 -> 123 -> 123 -> 123 -> 123 -> com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method,  ->  no file in folders ->  so cant read  -> <br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method,  ->  no file in folders ->  so cant read  -> <br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method,  ->  no file in folders ->  so cant read  -> <br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method, ->  ->  No Directory Path Found in system where .xlsx file should be,  ->  expected path C\:\\Jobs\\FY2023-24\\FUND_FLOW\\FUND_STATUS<br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method, ->  ->  No Directory Path Found in system where .xlsx file should be,  ->  expected path C\:\\Jobs\\FY2024-25\\FUND_FLOW\\FUND_STATUS<br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method, ->  ->  No Directory Path Found in system where .xlsx file should be,  ->  expected path C\:\\Jobs\\FY2025-26\\FUND_FLOW\\FUND_STATUS<br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method, ->  ->  No Directory Path Found in system where .xlsx file should be,  ->  expected path C\:\\Jobs\\FY2026-27\\FUND_FLOW\\FUND_STATUS<br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method, ->  ->  No Directory Path Found in system where .xlsx file should be,  ->  expected path C\:\\Jobs\\FY2027-28\\FUND_FLOW\\FUND_STATUS<br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method, ->  ->  No Directory Path Found in system where .xlsx file should be,  ->  expected path C\:\\Jobs\\FY2028-29\\FUND_FLOW\\FUND_STATUS<br><br><br>com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder -> , getFilesFromFYFolders() method,  ->  no file in folders ->  so cant read  -> <br><br><br>
+logs.present=yes.logs.are.present
+properties.file.path.outside.jar=C\:/Users/ShaadAnsari/Downloads/WORK/Eclipse Workspaces/JOBS(all merged)/JOBS/src/main/resources/application.properties
+send.email.from=mdshaadansari5@gmail.com
+send.email.to=mdshaadansari5@gmail.com
+spring.application.name=JAVAJOBS
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.datasource.password=shaad1234
+spring.datasource.url=jdbc\:sqlserver\://localhost\:1433;databaseName\=FinanceDashboard
+spring.datasource.username=sa
+spring.devtools.restart.enabled=false

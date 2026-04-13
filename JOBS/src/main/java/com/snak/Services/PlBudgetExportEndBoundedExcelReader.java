@@ -54,7 +54,7 @@ public class  PlBudgetExportEndBoundedExcelReader{
 	                  sheetName = workbook.getSheetName(i);
 
 	                 if (sheetName != null && sheetName.toLowerCase().contains("export")) {
-	                	 System.err.println(excelFile+"have sheet with 'export' in it: " + sheetName);
+	                	 System.err.println(excelFile+" have sheet with 'export' in it: " + sheetName);
 	                     sheet = workbook.getSheetAt(i);
 	                     break;
 	                 }else {
@@ -84,7 +84,7 @@ System.out.println(sheet.getSheetName());
 	                         "PlBudgetExportEndBoundedExcelReader.class",
 	                         "readDataBetweenEndMarkers()",
 	                         excelFile.getName(),
-	                         "END marker not found in COLUMN or ROW in sheet"+sheetName+ "in excel file "+excelFile,
+	                         "END marker not found in COLUMN or ROW in sheet "+sheetName+ " in excel file "+excelFile,
 	                         " so for pl budget export skipping this file and processing others, Pl Budget excel should have sheet haveing 'export' in its name"
 	                         
 	              )   );

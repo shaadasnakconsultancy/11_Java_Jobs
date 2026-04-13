@@ -116,7 +116,8 @@ String monthlyValue=null;
 
 System.out.println(sheet.getSheetName());
 	            	    // Match pattern like Apr'23, Jan'24 etc.
-boolean isFullFormat = sheetName.matches("^[A-Za-z]{3}'\\d{2}$");
+//boolean isFullFormat = sheetName.matches("^[A-Za-z]{3}'\\d{2}$");
+boolean isFullFormat = sheetName.matches("^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'\\d{2}$");
 if (sheetName != null && sheetName.length() >= 3) {
 	sheetName = sheetName.substring(0, 3);// Apr
 }
@@ -127,7 +128,7 @@ if (!isFullFormat && !isShortFormat) {
 	          	                        "ResultExpenseEndBoundedExcelReader_new.class",
 	          	                        "readDataBetweenEndMarkers()",
 	          	                        excelFile.getName(),
-	          	                        "'Result EX' excel file have sheet '"+sheetName+"' , Expected formats: Apr'25 OR Apr",
+	          	                        "'Result Expense' excel file have sheet '"+sheetName+"' , Expected formats: Apr'25 OR Apr",
 	          	                        "and also no other sheets except this format should be their, although other sheet will not be processed and these fault sheet will be ignored"
 	          	                    )
 	          	                );

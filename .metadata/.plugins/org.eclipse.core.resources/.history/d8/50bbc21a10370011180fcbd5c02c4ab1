@@ -1,0 +1,34 @@
+spring.application.name=ResultUnits
+#spring.main.banner-mode=off
+#logging.level.root=debug
+#debug=true
+###################################
+#### DATABASE PROPERTIES ##########
+###################################
+# jdbc.databaseURL=jdbc:sqlserver://DESKTOP-R73SU9E\SQLEXPRESS:1433;databaseName=SMIDashBoard;encrypt=true;trustServerCertificate=true;
+#for local sql server
+
+# spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=SMIDashBoard;
+#spring.datasource.username=sa
+# spring.datasource.password=shaad1234
+#  spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+ 
+# spring.datasource.url=jdbc:sqlserver://139.59.4.149;databaseName=Java_Job;
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=FinanceDashboard
+ spring.datasource.username=sa
+ spring.datasource.password=SnaK@12345I
+ spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+############EXCEL directory#######################
+dealer.stock.source.directory.path=C:\\2025-26\\
+budget.plan.archive.directory=C:\\2025-26 Archive\\Archive\\
+
+
+#########################
+job.batch.id=1
+logs.present=yes.logs.are.present
+logs.message=
+
+####################
+properties.file.path.outside.jar=C:/Users/ShaadAnsari/Downloads/WORK/Eclipse Workspaces/JOBS(all merged)/JOBS/src/main/resources/application.properties

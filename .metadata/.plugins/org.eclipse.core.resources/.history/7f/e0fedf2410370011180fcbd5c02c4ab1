@@ -1,0 +1,15 @@
+#Updated after exception
+#Fri Mar 13 14:39:53 IST 2026
+budget.plan.archive.directory=C\:\\2025-26 Archive\\Archive\\
+dealer.stock.source.directory.path=C\:\\2025-26\\
+job.batch.id=1
+logs.message=
+logs.present=yes.logs.are.present
+properties.file.path.outside.jar=C\:/Users/ShaadAnsari/Downloads/WORK/Eclipse Workspaces/JOBS(all merged)/JOBS/src/main/resources/application.properties
+spring.application.name=ResultUnits
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.datasource.password=shaad1234
+spring.datasource.url=spring.datasource.url
+spring.datasource.username=sa
+send.email.to=mdshaadansari5@gmail.com
+send.email.from=shaada@snakconsultancy.com
