@@ -9,10 +9,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder;
 import com.snak.Repository.Excel_Job_Tracker_TableInDB_Updater;
 import com.snak.Repository.ResultDep_repository;
 import com.snak.Services.Dynamic_File_System;
-import com.snak.Services.File_System;
 import com.snak.Services.LoggerCLass;
 import com.snak.Services.ResultDepEndBoundedExcelReader;
 import com.snak.Services.applicationPropertiesService;
@@ -39,7 +39,7 @@ public class ResultDepApplication {
 	@Autowired
 	Dynamic_File_System Dynamic_File_System;
 	@Autowired
-	File_System File_System;
+	newFiletSoFYFolderIsTheirAsParentInJobFolder newFiletSoFYFolderIsTheirAsParentInJobFolder;
 	@Autowired
 	Excel_Job_Tracker_TableInDB_Updater Excel_Job_Tracker_TableInDB_Updater;
 
@@ -58,7 +58,7 @@ File file2=null;
         	 String completed=null;
             // YOUR ACTUAL JOB
         	// 1. getting all .xlsx in directory
-              excelFileList=File_System.getFileFromDirectory("directory.path","archive.directory.path");
+        	 excelFileList=newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.pl.actual");
             // Dynamic_File_System.RUN_JOB();
 
               String currentBatchId=applicationPropertiesService.getProperty("job.batch.id");
@@ -114,7 +114,7 @@ File file2=null;
               
         } catch (Exception e) {
 //        	 logger.info("run() in :: > "+ ResultDepApplication.class.getName());
-        	GlobalExceptionHandler_AND_EmailSender.handleException( new PrintLog_AND_SendEmail_Exception("ResultDepApplication.class", "run()", file2.getName(), "exception while reading data from this excel or at doing DB operation of this file",e.toString()+ " " +e.getMessage()));
+        	GlobalExceptionHandler_AND_EmailSender.handleException( new PrintLog_AND_SendEmail_Exception("ResultDepApplication.class", "run() ", file2!=null? file2.getName():"" , " exception while reading data from this excel or at doing DB operation of this file",e.toString()+ " " +e.getMessage()));
         	  e.printStackTrace();
         	 // LoggerCLass.printStackTraceToLogs(ResultUnitsApplication.class.getName(),"run", e);
         }

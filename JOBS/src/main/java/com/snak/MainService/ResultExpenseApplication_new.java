@@ -16,16 +16,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder;
 import com.snak.Repository.Excel_Job_Tracker_TableInDB_Updater;
 import com.snak.Repository.ResultExpense_repository_new;
 import com.snak.Services.Dynamic_File_System;
-import com.snak.Services.File_System;
 import com.snak.Services.LoggerCLass;
 import com.snak.Services.ResultExpenseEndBoundedExcelReader_new;
 import com.snak.Services.applicationPropertiesService;
-import com.snak.Services.emailSender;
 import com.snak.UserDefiendExceptionHandler$Logging.GlobalExceptionHandler_AND_EmailSender;
 import com.snak.UserDefiendExceptionHandler$Logging.PrintLog_AND_SendEmail_Exception;
+import com.snak.dto.PlBudgetExport_DTO;
 import com.snak.dto.Result_Expense;
 @Service
 public class ResultExpenseApplication_new  {
@@ -50,12 +50,12 @@ public class ResultExpenseApplication_new  {
 	@Autowired
 	Dynamic_File_System Dynamic_File_System;
 	@Autowired
-	File_System File_System;
+	newFiletSoFYFolderIsTheirAsParentInJobFolder newFiletSoFYFolderIsTheirAsParentInJobFolder;
 	 
  
 	public void run( )   {
 
-        System.out.println("ResultExpenseApplication Job Started");
+        System.out.println("ResultExpenseApplication_new Job Started");
         //emailSender.sendEmail("mdshaad024@gmail.com", "subject", "message");
         //System.exit(0);
         
@@ -65,29 +65,79 @@ public class ResultExpenseApplication_new  {
    	 String completed=null;
         try {
         	
-        	RUN_JOB();
-        	
+            // YOUR ACTUAL JOB
+        	// 1. getting all .xlsx in directory
+        	excelFileList=newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.pl.expense");
+            // Dynamic_File_System.RUN_JOB();
 
+              String currentBatchId=applicationPropertiesService.getProperty("job.batch.id");
+              
+              
+              
+            //2. getting all excel data in List<Result_Units> from each file one by one
+              for (File file : excelFileList) {
+            	  /*		2.1.  calling setFileName_FilePath_SheetName_BatchID() (Excel_Job_Tracker_TableInDB_Updater.class) to set these
+      			 * FileName, FilePath, SheetName, BatchID these data in Excel job tracker table
+      			 * then will call match_FY$Actual_Remove_Insert() to do DB operataion in which again call   method from class 
+      			 * (Excel_Job_Tracker_TableInDB_Updater.class)  to update row deleted column in Excel job tracker table and  update row inserted in Excel job tracker table
+      */
+      Excel_Job_Tracker_TableInDB_Updater.  setFileName_FilePath_SheetName_BatchID(file,"Result Expense", currentBatchId);
+             list=ResultExpenseEndBoundedExcelReader_new.readDataBetweenEndMarkers(file);
+            if(list==null) {
+            	Excel_Job_Tracker_TableInDB_Updater.  updatingExcelJobTrackr_ErrorMessagesColumns(file,"Result Expense",currentBatchId,"FAIL");
+              	 continue;
+               }
+            file2=file;
+            
+            //3.if FY and Actual is present in DB, then within one transaction remove data from DB having FY and Actual 
+            //and insert data 
+     		
+        completed= ResultExpense_repository_new.match_FY$Actual_Remove_Insert(list,file);
+             /*
+              * 3.2. then calling method from Excel_Job_Tracker_TableInDB_Updater.class in which we will check if their is any log being created 
+              * in .properties file if yes then updateing ErrorMessage column
+              * 
+              *  OR
+              *  
+              *  we can just check if match_FY$Actual_Remove_Insert() is returning null means yes error happened and update method fromExcel_Job_Tracker_TableInDB_Updater.class
+              * */
+           if(completed!=null) {
+         	   Excel_Job_Tracker_TableInDB_Updater.  updatingExcelJobTrackr_ErrorMessagesColumns(file,"Result Expense",currentBatchId,"SUCCESS");
+            	 
+             }else if(completed==null){
+             	 Excel_Job_Tracker_TableInDB_Updater.  updatingExcelJobTrackr_ErrorMessagesColumns(file,"Result Expense",currentBatchId,"FAIL");
+             	continue;	
+             }    
+           	//  repository.createRecords(getDummyList());
+           
+           //4. moving processed file to archive folder
+         // File_System.moveFileToArchive(file, file);
+        //if we get true means file is being moved successfully , mean all previous steps have been completed and now we can send success email
+        
+        
+        	//send email success email if file is moved to archive, if we are getting back true
+         
+        
+        
+          //clearing the list so only next excel data will be available in lsit not data from all excel files
+          if(list!=null)list.clear(); 
+              }
+              
         } catch (Exception e) {
-        	// logger.info("run() in :: > "+ ResultUnitsApplication.class.getName());
+//        	 logger.info("run() in :: > "+ ResultTransPackingApplication.class.getName());
 
         	 // LoggerCLass.printStackTraceToLogs(ResultUnitsApplication.class.getName(),"run", e);
-        	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception("ResultExpenseApplication_new.class", "run()", file2.getName(), "exception while reading data from this excel or at doing DB operation of this file",e.toString()+ " "+e.getMessage()));
+        	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception("ResultExpenseApplication_new.class", " run() ", file2!=null? file2.getName():"" , " exception while reading data from this excel or at doing DB operation of this file ",e.toString()+ " "+e.getMessage()));
         	e.printStackTrace();
         }
-
       //  if(excelFileList!=null) excelFileList.clear();
-        System.out.println("ResultExpense Job Finished");
+        System.out.println("ResultExpenseApplication_new Job Finished");
 
         //  THIS LINE MAKES APP EXIT (Important for batch jobs)
-       //  System.exit(0);  
+     //    System.exit(0);  
 	}
 
-	private void exit(int i) {
-		// TODO Auto-generated method stub
-		
-	}
-
+	
 	
 	//================================dynamic file system special for result expense job======================================================
 	public   void RUN_JOB() {

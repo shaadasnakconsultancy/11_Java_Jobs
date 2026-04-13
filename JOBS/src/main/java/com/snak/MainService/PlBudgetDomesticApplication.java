@@ -9,19 +9,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.snak.newFiletSoFYFolderIsTheirAsParentInJobFolder;
 import com.snak.Repository.Excel_Job_Tracker_TableInDB_Updater;
 import com.snak.Repository.PlBudgetDomestic_repository;
-import com.snak.Repository.ResultProAss_repository;
 import com.snak.Services.Dynamic_File_System;
-import com.snak.Services.File_System;
 import com.snak.Services.LoggerCLass;
 import com.snak.Services.PlBudgetDomesticEndBoundedExcelReader;
 import com.snak.Services.applicationPropertiesService;
-import com.snak.Services.emailSender;
 import com.snak.UserDefiendExceptionHandler$Logging.GlobalExceptionHandler_AND_EmailSender;
 import com.snak.UserDefiendExceptionHandler$Logging.PrintLog_AND_SendEmail_Exception;
 import com.snak.dto.PlBudgetDomestic_DTO;
-import com.snak.dto.Result_Pro_Ass;
 @Service
 public class PlBudgetDomesticApplication  {
 
@@ -45,7 +42,7 @@ public class PlBudgetDomesticApplication  {
 	@Autowired
 	Dynamic_File_System Dynamic_File_System;
 	@Autowired
-	File_System File_System;
+	newFiletSoFYFolderIsTheirAsParentInJobFolder newFiletSoFYFolderIsTheirAsParentInJobFolder;
 	 
 	public void run( )   {
 
@@ -61,7 +58,7 @@ public class PlBudgetDomesticApplication  {
         	
             // YOUR ACTUAL JOB
         	// 1. getting all .xlsx in directory
-              excelFileList=File_System.getFileFromDirectory("directory.path.plbudget","archive.directory.path.plbudget");
+        	 excelFileList=newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.pl.budget");
             // Dynamic_File_System.RUN_JOB();
 
               String currentBatchId=applicationPropertiesService.getProperty("job.batch.id");
@@ -121,7 +118,7 @@ public class PlBudgetDomesticApplication  {
 //        	 logger.info("run() in :: > "+ ResultTransPackingApplication.class.getName());
 
         	 // LoggerCLass.printStackTraceToLogs(ResultUnitsApplication.class.getName(),"run", e);
-        	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception("PlBudgetDomesticApplication.class", "run()", file2.getName(), "exception while reading data from this excel or at doing DB operation of this file ",e.toString()+ " "+e.getMessage()));
+        	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception("PlBudgetDomesticApplication.class", "run() ", file2!=null? file2.getName():"" , " exception while reading data from this excel or at doing DB operation of this file ",e.toString()+ " "+e.getMessage()));
         	e.printStackTrace();
         }
       //  if(excelFileList!=null) excelFileList.clear();

@@ -1,0 +1,262 @@
+package com.snak;
+
+
+
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.snak.UserDefiendExceptionHandler$Logging.GlobalExceptionHandler_AND_EmailSender;
+import com.snak.UserDefiendExceptionHandler$Logging.PrintLog_AND_SendEmail_Exception;
+//@Service 
+public class newFiletSoFYFolderIsTheirAsParentInJobFolder {
+
+	static Logger logger=LoggerFactory.getLogger(newFiletSoFYFolderIsTheirAsParentInJobFolder.class);
+//	@Autowired
+//	GlobalExceptionHandler_AND_EmailSender GlobalExceptionHandler_AND_EmailSender;
+
+    public static void main(String[] args) {
+
+        String baseDir = "C:\\Jobs\\";
+
+        List<File> files = new newFiletSoFYFolderIsTheirAsParentInJobFolder().getFilesFromFYFolders(
+                baseDir,
+                "C:\\Jobs\\FY23-24\\P&L\\Budget\\"
+        );
+
+        files.forEach(n->System.out.println(n.getName()));
+        System.out.println("Total Files: " + files.size());
+        
+
+        moveToArchive(files);
+    }
+
+    public   List<File> getFilesFromFYFolders(String baseDir, String fullPath) {
+    	 if(null==baseDir && "".equals(baseDir) &&
+    	 null==fullPath && "".equals(fullPath))
+    	 {
+    		 System.err.println(" Directory Does not Exist at Location spesified at application.properties file");
+    		 /*
+    		 GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(new newFiletSoFYFolderIsTheirAsParentInJobFolder().getClass().getName(),
+    				 ", getFilesFromFYFolders() method, ", "",
+    				 " Directory Does not Exist at Location spesified at application.properties file",
+    				 ""));
+    		 */
+    	 }
+    	
+    	
+    	
+File FileextentionCheck=null;
+        List<File> allFiles = new ArrayList<>();
+
+        try {
+
+            // ================= STEP 1 =================
+            // Remove base directory from full path
+            // Example:
+            // baseDir  = C:\Jobs
+            // fullPath = C:\Jobs\FY23-24\P&L\Budget
+            // Result   = FY23-24\P&L\Budget
+
+            String relativePath = fullPath.replace(baseDir.trim(),"");
+
+            // ================= STEP 2 =================
+            // Split remaining path into parts
+            // Example:
+            // FY23-24\P&L\Budget → ["FY23-24", "P&L", "Budget"]
+
+            String[] parts = relativePath.split("\\\\");
+
+            // ================= STEP 3 =================
+            // Remove FY folder (first element)
+            // Example:
+            // ["FY23-24", "P&L", "Budget"]
+            // → remove index 0
+            // → remaining = P&L\Budget
+
+            StringBuilder subPathBuilder = new StringBuilder();
+
+            for (int i = 1; i < parts.length; i++) {
+                subPathBuilder.append(parts[i]);
+
+                if (i < parts.length - 1) {
+                    subPathBuilder.append("\\");
+                }
+            }
+
+            String subPathStr = subPathBuilder.toString();
+
+            // Convert to Path
+            Path subPath = Paths.get(subPathStr);
+
+            // ================= STEP 4 =================
+            // Loop all FY folders inside baseDir
+
+            try (DirectoryStream<Path> fyFolders = Files.newDirectoryStream(Paths.get(baseDir))) {
+            	abc:
+                for (Path fyFolder : fyFolders) {
+
+                    if (Files.isDirectory(fyFolder)) {
+
+                    	  String folderName = fyFolder.getFileName().toString();
+
+                    	    // Check below condition so other folders in financial year folders will be skipped
+                    	    // 1. Contains "f" or "y" (case-insensitive)
+                    	    // 2. Contains at least one digit
+
+                    	    if (!folderName.toLowerCase().contains("f") &&
+                    	    		!folderName.toLowerCase().contains("y")&&
+                    	    		!folderName.matches(".*\\d.*")) {
+                    	    	continue abc;
+                    	    }
+
+                    	
+                    	
+                        // ================= STEP 5 =================
+                        // Attach subPath to each FY folder
+                        // Example:
+                        // FY24-25 + P&L\Budget → C:\Jobs\FY24-25\P&L\Budget
+
+                        Path targetPath = fyFolder.resolve(subPath);
+
+                        if (Files.exists(targetPath) && Files.isDirectory(targetPath)) {
+                        /*
+                        	 
+                        	File folder = targetPath.toFile();
+                        	File[] excelFiles = folder.listFiles(file -> file.isFile());
+                        	if (excelFiles == null || excelFiles.length == 0) {
+                        		GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception("File_System.class", 
+                        				"getFileFromDirectory()",   "no file in folder" , " so cant read ","" )  ) ;
+                        	}
+                      	*/
+                        
+                            // ================= STEP 6 =================
+                            // Read files
+
+                            try (DirectoryStream<Path> files = Files.newDirectoryStream(targetPath)) {
+                                for (Path file : files) {
+                                	  // Skip directories explicitly
+                                    if (Files.isDirectory(file)) {
+                                        continue; // ignore folders completely
+                                    }
+
+                                    // Add only files
+                                    if (Files.isRegularFile(file)) {
+                                    	FileextentionCheck=file.toFile();
+                                    	  if(null!=FileextentionCheck && FileextentionCheck.isFile() && null!=FileextentionCheck.getName() && 
+                  								( FileextentionCheck.getName().endsWith(".xlsx")  ))
+                  						{
+
+                                              allFiles.add(FileextentionCheck);
+//                  				        	 
+                  							}else { 
+//                  								GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(new newFiletSoFYFolderIsTheirAsParentInJobFolder().getClass().getName(), ", getFilesFromFYFolders() method ", FileextentionCheck.getAbsolutePath(), " <- this file is not .xlsx file", " so cant read, although other .xlsx file have been proccessed succussfuly"));
+                  							} 
+                                    	
+                                    }
+                                }
+                            }
+                        }else {
+//                        	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(new newFiletSoFYFolderIsTheirAsParentInJobFolder().getClass().getName(), ", getFilesFromFYFolders() method,", "", " No Directory Path Found in system where .xlsx file should be, ", " expected path "+targetPath));
+                        }
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            /*
+        	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(new newFiletSoFYFolderIsTheirAsParentInJobFolder().getClass().getName(),
+        			", getFilesFromFYFolders() method,", "", " some problem occured while pickingup .xlsx files from directory -",
+        			fullPath+" , check .log file  ,"
+        			+ " "+e.toString()));
+        			*/
+        }
+
+       if (allFiles == null || allFiles.size() == 0) {
+    	/*
+    	   GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(  new newFiletSoFYFolderIsTheirAsParentInJobFolder().getClass().getName(), 
+    				", getFilesFromFYFolders() method, ", " no file in folders" , " so cant read ",""   ) );
+    				*/
+    	}
+        
+        return allFiles;
+    }
+
+    
+    //=====================================================
+ 
+ 
+
+        public static void moveToArchive(List<File> allFiles) {
+        	
+        	
+        	for (File file : allFiles) {
+        	
+        	
+            try {
+                Path filePath = file.toPath();
+
+                // ================= STEP 1 =================
+                // Get parent folder (e.g., Budget)
+                // Example:
+                // C:\Jobs\FY27-28\P&L\Budget\file1.xlsx
+                // → parent = C:\Jobs\FY27-28\P&L\Budget
+
+                Path parentDir = filePath.getParent();
+
+                // ================= STEP 2 =================
+                // Create Archive folder path
+                // → C:\Jobs\FY27-28\P&L\Budget\Archive
+
+                Path archiveDir = parentDir.resolve("Archive");
+
+                // ================= STEP 3 =================
+                // Create Archive folder if not exists
+
+                if (!Files.exists(archiveDir)) {
+                    Files.createDirectories(archiveDir);
+                }
+
+                // ================= STEP 4 =================
+                // Target file path in Archive
+                // Timestamp
+                String timeStamp = new SimpleDateFormat("yyyy-MM-dd_HH_mm_ss")
+                        .format(new Date());
+                Path targetPath = archiveDir.resolve(timeStamp+"_"+filePath.getFileName() );
+
+                // ================= STEP 5 =================
+                // Move file
+
+                Files.move(
+                        filePath,
+                        targetPath,
+                        StandardCopyOption.REPLACE_EXISTING // overwrite if exists
+                );
+
+                System.out.println("Moved: " + file.getName());
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    
+}
+    
+    
+
+}

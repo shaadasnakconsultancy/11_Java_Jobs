@@ -18,7 +18,6 @@ import com.snak.MainService.FundFlowApplication;
 import com.snak.MainService.PlBudgetDomesticApplication;
 import com.snak.MainService.PlBudgetExportApplication;
 import com.snak.MainService.ResultDepApplication;
-import com.snak.MainService.ResultExpenseApplication;
 import com.snak.MainService.ResultExpenseApplication_new;
 import com.snak.MainService.ResultPartsApplication;
 import com.snak.MainService.ResultPriceApplication;
@@ -76,10 +75,13 @@ public class MainBootClass implements CommandLineRunner{
 	
 	@Autowired
 	  PlBudgetDomesticApplication         	  PlBudgetDomesticApplication;
+	
 	@Autowired
 	ResultDepApplication ResultDepApplication;
 	
-	
+	@Autowired
+	newFiletSoFYFolderIsTheirAsParentInJobFolder newFiletSoFYFolderIsTheirAsParentInJobFolder;
+	 
 
 	 @Value("${properties.file.path.outside.jar}")
 	 private  String propertiesFilePathOutSideJar;
@@ -90,7 +92,7 @@ public class MainBootClass implements CommandLineRunner{
 		
 	 
 	public static void main(String[] args) {
-	       
+	
 		 
 		System.out.println("running  main()-");
 		
@@ -118,6 +120,8 @@ public class MainBootClass implements CommandLineRunner{
 	boolean trueIfInternetAvailable=false;
 	@Override
 	public void run(String... args) throws Exception {
+		  long start = System.nanoTime();
+		
 		long maxHeap = Runtime.getRuntime().maxMemory();
 		System.out.println("Max Heap = " + (maxHeap / 1024 / 1024) + " MB");
         System.out.println("starting all Jobs");
@@ -146,7 +150,7 @@ public class MainBootClass implements CommandLineRunner{
         try {
         	
         	
-        	List<File> excelFileList = new ArrayList<>();
+        	
         	//geting batchId "JavaJob1" from .properties
 
         	//incrementing this batchid in .properties so when next time this project/app runs then these all below job will get same batchid  
@@ -498,32 +502,40 @@ public class MainBootClass implements CommandLineRunner{
         	  
         	  
         //===============deleteing excel to archive====================================
+        	  List<File> excelFileList = new ArrayList<>();
+        	  
+        	//$1 removing pl budget excel
+          	//getting all .xlsx in all FY directory 
+        	  
+        	  excelFileList=  newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.pl.budget");
+            //moving all file to archive folder
+        	  newFiletSoFYFolderIsTheirAsParentInJobFolder.moveToArchive(excelFileList);
+              
+              
+              //$2  removing pl actual excel
+            	//getting all .xlsx in all FY directory 
+        	  
+        	  excelFileList=  newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.pl.actual");
+            //moving all file to archive folder
+        	  newFiletSoFYFolderIsTheirAsParentInJobFolder.moveToArchive(excelFileList);
+              
+              
+        	   
+              //$2  removing pl Expense excel
+            	//getting all .xlsx in all FY directory 
+        	  
+        	  excelFileList=  newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.pl.expense");
+            //moving all file to archive folder
+        	  newFiletSoFYFolderIsTheirAsParentInJobFolder.moveToArchive(excelFileList);
         	  
         	  
-        	//$1 removing pl summary excel
-          	//getting all .xlsx in directory
-              excelFileList=File_System.getFileFromDirectory2("directory.path","archive.directory.path");
-            
-           //moving all file to archive folder
-              for (File file : excelFileList) {
-          File_System.moveFileToArchive(file, file,"directory.path","archive.directory.path");
-           
-              }
-              
-              
-              //$2 removing pl budget excel to archaive
-          	
-            	//getting all .xlsx in directory
-                excelFileList=File_System.getFileFromDirectory2("directory.path.plbudget","archive.directory.path.plbudget");
-              
-             //moving all file to archive folder
-                for (File file : excelFileList) {
-            File_System.moveFileToArchive(file, file,"directory.path.plbudget","archive.directory.path.plbudget");
-             
-                }
-             
-                //$3 ResultExpenseApplication_new.class is having file system of result expense
-//                $3 FundFlowApplication.class is having file system of fund flow
+        	   
+              //$2  removing fundflow fundstatus excel
+            	//getting all .xlsx in all FY directory 
+        	  
+        	  excelFileList=  newFiletSoFYFolderIsTheirAsParentInJobFolder.getFilesFromFYFolders("directory.path.of.parent.folder.of.financialfolders", "directory.path.of.fundflow.fundstatus");
+            //moving all file to archive folder
+        	  newFiletSoFYFolderIsTheirAsParentInJobFolder.moveToArchive(excelFileList);
               
           	//===============deleteing excel to archive====================================	  
         	
@@ -543,6 +555,24 @@ emailSender.sendEmail(sendEmailTo, "problem while running java jobs", "please ch
 
         System.out.println("ALL Job Finished");
 
+        
+        
+        //below measuring time taken in running all jobs
+        long end = System.nanoTime();
+        long totalMillis = (end - start) / 1_000_000;
+
+        long hours = totalMillis / (1000 * 60 * 60);
+        long minutes = (totalMillis / (1000 * 60)) % 60;
+        long seconds = (totalMillis / 1000) % 60;
+        long milliseconds = totalMillis % 1000;
+
+        System.out.println("Time taken: " 
+                + hours + " hr "
+                + minutes + " min "
+                + seconds + " sec "
+                + milliseconds + " ms");
+        
+        
         //  THIS LINE MAKES APP EXIT (Important for batch jobs)
          System.exit(0);  
 	}
