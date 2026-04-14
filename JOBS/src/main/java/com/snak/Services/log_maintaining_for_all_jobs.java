@@ -57,8 +57,7 @@ PreparedStatement pstmt=null;
 Connection conn = null;
 try {
 
-
-System.out.println("sendSuccessEmailWithExcelJobTracketData");
+ 
 //1.    if DB with name 'FinanceDashboard' does not exist
 
 	System.out.println("in try");
@@ -279,7 +278,7 @@ return "completed";
 
 public String logIn_TxtFile_for_Fail_WithExcelJobTracketDataANDLogMessages(String batchId,String LogMessage){
 	System.err.println("logIn_TxtFile_for_Fail_WithExcelJobTracketDataANDLogMessages() method");
-	System.err.println("batch ID-> "+batchId);
+//	System.err.println("batch ID-> "+batchId);
 	
 	int totalDeletedRows=0;
 
@@ -403,7 +402,7 @@ try {
 		List<excelJobTrackerDTO> list = new ArrayList<>();
 		if(b) {
 			ResultSet resultset=pstmt.getResultSet();
-			System.out.println("rs = " + rs);
+//			System.out.println("rs = " + rs);
 //			excelJobTrackerDTO header = new excelJobTrackerDTO();
 //			header.setBatchID("BatchID");
 //			header.setFileName("FileName");
@@ -417,7 +416,7 @@ try {
 //			list.add(header);
 			if(resultset.next()) {
 				do {
-					System.err.println("inside do block");
+//					System.err.println("inside do block");
 					excelJobTrackerDTO obj = new excelJobTrackerDTO();
 
 
@@ -437,7 +436,7 @@ try {
 					
 				}while(resultset.next());
 			}else {
-				System.out.println("no rows coming from excel job tracker table");
+//				System.out.println("no rows coming from excel job tracker table");
 			}
 			
 			
