@@ -123,18 +123,24 @@ if (sheetName != null && sheetName.length() >= 3) {
 }
 boolean isShortFormat = validMonths.contains(sheetName);
 if (!isFullFormat && !isShortFormat) {
-	            	    	  GlobalExceptionHandler_AND_EmailSender.handleException(
-	          	                    new PrintLog_AND_SendEmail_Exception(
-	          	                        "ResultExpenseEndBoundedExcelReader_new.class",
-	          	                        "readDataBetweenEndMarkers()",
-	          	                        excelFile.getName(),
-	          	                        "'Result Expense' excel file have sheet '"+sheetName+"' , Expected formats: Apr'25 OR Apr",
-	          	                        "and also no other sheets except this format should be their, although other sheet will not be processed and these fault sheet will be ignored"
-	          	                    )
-	          	                );
+	            	    	  
+
 	            	    	  //if in excel their is only 1 sheet and sheet name is not in formate like 'apr' or apr'25 then returning null
 	            	    	  //so that excel job tracker will be maintained as failed for that excel file
-	            	    	  if(workbook.getNumberOfSheets()==1) {
+	
+	// and if their is more sheet than 1, then not maintainting any log by calling GlobalExceptionHandler_AND_EmailSender.handleException()
+//	method, in this case only continueting iteration of sheets
+	            	    	  
+						if(workbook.getNumberOfSheets()==1) {
+	            	    		  GlobalExceptionHandler_AND_EmailSender.handleException(
+	  	          	                    new PrintLog_AND_SendEmail_Exception(
+	  	          	                        "ResultExpenseEndBoundedExcelReader_new.class",
+	  	          	                        "readDataBetweenEndMarkers()",
+	  	          	                        excelFile.getName(),
+	  	          	                        "'Result Expense' excel file have sheet '"+sheetName+"' , Expected formats: Apr'25 OR Apr",
+	  	          	                        "and also no other sheets except this format should be their, although other sheet will not be processed and these fault sheet will be ignored"
+	  	          	                    )
+	  	          	                );
 	            	    		  return null;
 	            	    	  }
 	          	                continue sheetIterator;   // continueing to other month sheets
