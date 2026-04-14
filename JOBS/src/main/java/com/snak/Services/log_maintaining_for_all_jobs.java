@@ -511,7 +511,7 @@ return "completed";
 
 public void appendHtmlToTxtFile(String filePath, String htmlContent,String logMessages, String batchID) {
 	System.out.println("inside appendHtmlToTxtFile() method");
-	System.err.println(htmlContent);
+//	System.err.println(htmlContent);
 	logMessages=logMessages.replace("<br>", "\n");
     FileWriter fw = null;
     BufferedWriter bw = null;
