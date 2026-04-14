@@ -47,6 +47,7 @@ public class log_maintaining_for_all_jobs {
 
 
 public String logIn_TxtFile_for_SuccessWithExcelJobTracketData(String batchId){
+	System.err.println("logIn_TxtFile_for_SuccessWithExcelJobTracketData() method");
 	int totalDeletedRows=0;
 
 CallableStatement cstmt =null;
@@ -160,7 +161,8 @@ System.out.println("sendSuccessEmailWithExcelJobTracketData");
 		pstmt=conn.prepareStatement(sql);
 //		Set parameters BEFORE executing
 		
-		pstmt.setInt(1,Integer.parseInt(batchId));
+//		pstmt.setInt(1,Integer.parseInt(batchId));
+		pstmt.setLong(1, Long.parseLong(batchId));
 		
 		
 		boolean b=pstmt.execute();
@@ -190,7 +192,7 @@ System.out.println("sendSuccessEmailWithExcelJobTracketData");
 				    obj.setInsertedRows(String.valueOf(resultset.getInt(6)));
 				    obj.setDeletedRows(String.valueOf(resultset.getInt(7)));
 				    obj.setErrorMessages(resultset.getString(8));
-
+				    System.out.println(obj.toString());
 				    list.add(obj);
 
 					
@@ -225,7 +227,7 @@ System.out.println("sendSuccessEmailWithExcelJobTracketData");
 //		sendEmail(sendEmailTo, jobName +" job success for batchID "+batchId, "job is succcessfull but problem in taking data from excel_job_tracker table and putting it in this success email, just see success data of this job in excel_job_tracker table");
 		
 		e.printStackTrace() ;
-		   logger.info("Exception in doing DB task in sendSuccessEmailWithExcelJobTracketData() method > "+ log_maintaining_for_all_jobs.class.getName()+ "  ");
+		   logger.info("Exception in doing DB task in logIn_TxtFile_for_SuccessWithExcelJobTracketData() method > "+ log_maintaining_for_all_jobs.class.getName()+ "  ");
 
 System.out.println("catch block");
 			  
@@ -236,7 +238,7 @@ System.out.println("catch block");
 		}
 		catch(SQLException e1)
 		{
-			logger.info("connection is already null, cant roll back in sendSuccessEmailWithExcelJobTracketData.class");
+			logger.info("connection is already null, cant roll back in logIn_TxtFile_for_SuccessWithExcelJobTracketData.class");
 		}
 		/*
 		GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
@@ -264,7 +266,7 @@ System.out.println("catch block");
 		catch(SQLException e)
 		{
 
-			logger.info("connection and preparedStatement is already null, cant roll back in sendSuccessEmailWithExcelJobTracketData.class");
+			logger.info("connection and preparedStatement is already null, cant roll back in logIn_TxtFile_for_SuccessWithExcelJobTracketData.class");
 		}
 		pstmt = null;
 		
@@ -276,6 +278,9 @@ return "completed";
 
 
 public String logIn_TxtFile_for_Fail_WithExcelJobTracketDataANDLogMessages(String batchId,String LogMessage){
+	System.err.println("logIn_TxtFile_for_Fail_WithExcelJobTracketDataANDLogMessages() method");
+	System.err.println("batch ID-> "+batchId);
+	
 	int totalDeletedRows=0;
 
 CallableStatement cstmt =null;
@@ -286,7 +291,7 @@ Connection conn = null;
 try {
 
 
-System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
+
 //1.    if DB with name 'FinanceDashboard' does not exist
 
 	System.out.println("in try");
@@ -310,7 +315,7 @@ System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
 		System.out.println("DB does not exist  ");
 		
 		//log it
-	      logger.info("database doesnot exist in sqlserver with name -> "+ "FinanceDashboard" +" so cant take data from table 'Excel_Job_Tracker'  to attach in email in emailSender.class at sendSuccessEmailWithExcelJobTracketData() method");
+	      logger.info("database doesnot exist in sqlserver with name -> "+ "FinanceDashboard" +" so cant take data from table 'Excel_Job_Tracker'  to attach in .txt file");
 	      throw new Exception();
 	 /*
 	      GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
@@ -346,7 +351,7 @@ System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
 
 	    System.out.println("Table does not exist");
 
-	    logger.info("Table does not exist in FinanceDashboard DB with name -> Excel_Job_Tracker  at the point of taking data and attaching to email in emailSender.class at sendFailEmailWithExcelJobTracketDataANDLogMessages() method" );
+	    logger.info("Table does not exist in FinanceDashboard DB with name -> Excel_Job_Tracker  at the point of taking data and attaching in .txt file" );
 	      throw new Exception();
 	    /*
 	    GlobalExceptionHandler_AND_EmailSender.handleException(
@@ -389,13 +394,16 @@ System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
 		pstmt=conn.prepareStatement(sql);
 //		Set parameters BEFORE executing
 		
-		pstmt.setInt(1,Integer.parseInt(batchId));
+//		pstmt.setInt(1,Integer.parseInt(batchId));
+		pstmt.setLong(1, Long.parseLong(batchId));
 		
 		
 		boolean b=pstmt.execute();
+//		System.err.println(b);
 		List<excelJobTrackerDTO> list = new ArrayList<>();
 		if(b) {
 			ResultSet resultset=pstmt.getResultSet();
+			System.out.println("rs = " + rs);
 //			excelJobTrackerDTO header = new excelJobTrackerDTO();
 //			header.setBatchID("BatchID");
 //			header.setFileName("FileName");
@@ -409,6 +417,7 @@ System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
 //			list.add(header);
 			if(resultset.next()) {
 				do {
+					System.err.println("inside do block");
 					excelJobTrackerDTO obj = new excelJobTrackerDTO();
 
 
@@ -420,13 +429,15 @@ System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
 				    obj.setInsertedRows(String.valueOf(resultset.getInt(6)));
 				    obj.setDeletedRows(String.valueOf(resultset.getInt(7)));
 				    obj.setErrorMessages(resultset.getString(8));
-
+//System.out.println(obj.toString());
 				    list.add(obj);
 
 					
 					
 					
 				}while(resultset.next());
+			}else {
+				System.out.println("no rows coming from excel job tracker table");
 			}
 			
 			
@@ -452,7 +463,7 @@ String jobStatusTxtFileFolder=applicationPropertiesService.getProperty("job.stat
 //		sendEmail(sendEmailTo, jobName +" job fail status for batchID "+batchId," job is failing at some point and also problem in taking data from excel_job_tracker table and putting it in this job failiur email, just see failed data of this job in excel_job_tracker table \n\n \n log messages where problem occur in programm are -> \n"+LogMessage);
 		
 		e.printStackTrace() ;
-		   logger.info("Exception in doing DB task in sendSuccessEmailWithExcelJobTracketData() method > "+ log_maintaining_for_all_jobs.class.getName()+ "  ");
+		   logger.info("Exception in doing DB task in logIn_TxtFile_for_Fail_WithExcelJobTracketDataANDLogMessages() method > "+ log_maintaining_for_all_jobs.class.getName()+ "  ");
 
 System.out.println("catch block");
 			  
@@ -463,7 +474,7 @@ System.out.println("catch block");
 		}
 		catch(SQLException e1)
 		{
-			logger.info("connection is already null, cant roll back in sendSuccessEmailWithExcelJobTracketData.class");
+			logger.info("connection is already null, cant roll back in log_maintaining_for_all_jobs.class");
 		}
 		/*
 		GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
@@ -491,7 +502,7 @@ System.out.println("catch block");
 		catch(SQLException e)
 		{
 
-			logger.info("connection and preparedStatement is already null, cant roll back in sendSuccessEmailWithExcelJobTracketData.class");
+			logger.info("connection and preparedStatement is already null, cant roll back in log_maintaining_for_all_jobs.class");
 		}
 		pstmt = null;
 		
@@ -500,6 +511,8 @@ return "completed";
 }
 
 public void appendHtmlToTxtFile(String filePath, String htmlContent,String logMessages, String batchID) {
+	System.out.println("inside appendHtmlToTxtFile() method");
+	System.err.println(htmlContent);
 	logMessages=logMessages.replace("<br>", "\n");
     FileWriter fw = null;
     BufferedWriter bw = null;

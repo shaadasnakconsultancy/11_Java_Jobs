@@ -61,6 +61,12 @@ public class excelJobTrackerDTO {
 	public void setErrorMessages(String errorMessages) {
 		this.errorMessages = errorMessages;
 	}
+	@Override
+	public String toString() {
+		return "excelJobTrackerDTO [batchID=" + batchID + ", fileName=" + fileName + ", fullPath=" + fullPath
+				+ ", processedAt=" + processedAt + ", sheetName=" + sheetName + ", insertedRows=" + insertedRows
+				+ ", deletedRows=" + deletedRows + ", errorMessages=" + errorMessages + "]";
+	}
 
 
     // Getters & Setters

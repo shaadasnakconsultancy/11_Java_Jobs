@@ -240,8 +240,8 @@ System.out.println("sendSuccessEmailWithExcelJobTracketData");
 		pstmt=conn.prepareStatement(sql);
 //		Set parameters BEFORE executing
 		pstmt.setString(1, jobName);
-		pstmt.setInt(2,Integer.parseInt(batchId));
-		
+//		pstmt.setInt(2,Integer.parseInt(batchId));
+		pstmt.setLong(2, Long.parseLong(batchId));
 		
 		boolean b=pstmt.execute();
 		List<excelJobTrackerDTO> list = new ArrayList<>();
@@ -460,7 +460,8 @@ System.out.println("sendFailEmailWithExcelJobTracketDataANDLogMessages");
 		pstmt=conn.prepareStatement(sql);
 //		Set parameters BEFORE executing
 		pstmt.setString(1, jobName);
-		pstmt.setInt(2,Integer.parseInt(batchId));
+//		pstmt.setInt(2,Integer.parseInt(batchId));
+		pstmt.setLong(2, Long.parseLong(batchId));
 		
 		
 		boolean b=pstmt.execute();

@@ -39,10 +39,8 @@ public class MainBootClass implements CommandLineRunner{
 	static Logger logger=LoggerFactory.getLogger(MainBootClass.class);
 	@Autowired
 	LoggerCLass LoggerCLass;
-	
-	
-	
-	 
+
+
 
 	@Autowired
 	ResultunitsEndBoundedExcelReader ResultunitsEndBoundedExcelReader;
