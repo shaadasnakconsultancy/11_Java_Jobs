@@ -314,13 +314,17 @@ public  void createRecords(List<DMSStockTransactionDetails> list)
 			        pstmt.setString(9,  "");
 			    }
 
-			    pstmt.setString(10, Fund_Flow.getUSD());
-			    pstmt.setString(11, Fund_Flow.getINR());
-			    pstmt.setString(12, Fund_Flow.getYEN());
-			    pstmt.setString(13, Fund_Flow.getJPY());
-			    pstmt.setString(14, Fund_Flow.getEURO());
+//			    pstmt.setString(10, Fund_Flow.getUSD());
+//			    pstmt.setString(11, Fund_Flow.getINR());
+//			    pstmt.setString(12, Fund_Flow.getYEN());
+//			    pstmt.setString(13, Fund_Flow.getJPY());
+//			    pstmt.setString(14, Fund_Flow.getEURO());
 			    
-				
+			    pstmt.setString(10, Fund_Flow.getUSD()  == null ? "" : Fund_Flow.getUSD());
+			    pstmt.setString(11, Fund_Flow.getINR()  == null ? "" : Fund_Flow.getINR());
+			    pstmt.setString(12, Fund_Flow.getYEN()  == null ? "" : Fund_Flow.getYEN());
+			    pstmt.setString(13, Fund_Flow.getJPY()  == null ? "" : Fund_Flow.getJPY());
+			    pstmt.setString(14, Fund_Flow.getEURO() == null ? "" : Fund_Flow.getEURO());
 
 			    pstmt.addBatch();
 			    count++;

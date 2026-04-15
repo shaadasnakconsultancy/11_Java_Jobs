@@ -1,0 +1,1129 @@
+package com.snak.Services;
+ 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.snak.Repository.Excel_Job_Tracker_TableInDB_Updater;
+import com.snak.Repository.ResultExpense_repository;
+import com.snak.UserDefiendExceptionHandler$Logging.GlobalExceptionHandler_AND_EmailSender;
+import com.snak.UserDefiendExceptionHandler$Logging.PrintLog_AND_SendEmail_Exception;
+import com.snak.dto.Fund_Flow;
+import com.snak.dto.Result_Expense; 
+import org.apache.poi.ss.usermodel.DateUtil;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+@Service
+public class  FundFlowEndBoundedExcelReader{
+	static Logger logger=LoggerFactory.getLogger(FundFlowEndBoundedExcelReader.class);
+	Object value =null;
+	int columnIndex=0;
+	
+	@Autowired
+	GlobalExceptionHandler_AND_EmailSender GlobalExceptionHandler_AND_EmailSender;
+	File excelFile2=null;
+	Row row=null;
+	@Autowired
+	applicationPropertiesService applicationPropertiesService;
+	
+	@Autowired
+	Excel_Job_Tracker_TableInDB_Updater Excel_Job_Tracker_TableInDB_Updater;
+	@Autowired
+	ResultExpense_repository 	ResultExpense_repository;
+	
+	 public   List<Fund_Flow> readDataBetweenEndMarkers(File excelFile) {
+String completed=null;
+         String currentBatchId=applicationPropertiesService.getProperty("job.batch.id");
+         
+		 int sheetIterator=1;
+		 List<Fund_Flow> rowData = new ArrayList<>();
+		 Fund_Flow ICICI = null;
+		 Fund_Flow MUFG = null;
+		 Fund_Flow PettyCash = null;
+		 Fund_Flow Bank_of_Maharashtra = null;
+		 Fund_Flow MIZUHO = null;
+		 Fund_Flow SMBC_Bank = null;
+		 Fund_Flow UCO_Bank = null;
+		 Fund_Flow SBI = null;
+		 Fund_Flow Standard_Charted_Bank= null;
+		 Fund_Flow HDFC = null;
+		 Fund_Flow Unspent_CSR_AC_2022$23 = null;
+		 
+int temp=1;
+String monthlyValue=null;
+		 InputStream is=null;
+		 XSSFWorkbook workbook=null;
+	        try {
+
+	        	excelFile2=excelFile;
+	        	  is = new FileInputStream(excelFile);
+	               workbook = new XSSFWorkbook(is);
+	               
+	          // ⭐ Required to calculate formulas
+	             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+//	             evaluator.evaluateAll();
+	            //XSSFSheet sheet = workbook.getSheet("Result EX");
+	            
+	              
+	             
+	             
+	             //iterating all monthly sheets of result expense
+	             List<String> validMonths = Arrays.asList(
+	            		    "Apr","May","Jun","Jul","Aug","Sep",
+	            		    "Oct","Nov","Dec","Jan","Feb","Mar"
+	            		);
+	             System.out.println("Sheets available  "+workbook.getNumberOfSheets());
+	             
+	             
+	             //starting sheet iterator
+	             sheetIterator:
+	             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+
+	            	    XSSFSheet sheet = workbook.getSheetAt(i);
+	                    if (sheet == null) {
+	    	                GlobalExceptionHandler_AND_EmailSender.handleException(
+	    	                    new PrintLog_AND_SendEmail_Exception(
+	    	                        "FundFlowEndBoundedExcelReader.class",
+	    	                        "readDataBetweenEndMarkers()",
+	    	                        excelFile.getName(),
+	    	                        "no monthly sheet avilable while running 'Fund Flow' JOB",
+	    	                        "Skipping this excel file"
+	    	                    )
+	    	                );
+	    	                return null;   // stop processing this excel file
+	    	            }
+	            	
+	            	    
+	            	    
+	            	    
+	            	    String sheetName = sheet.getSheetName().trim();
+
+System.out.println(sheet.getSheetName());
+	            	    // Match pattern like Apr'23, Jan'24 etc. or even if apr, jan these exsist
+//boolean isFullFormat = sheetName.matches("^[A-Za-z]{3}'\\d{2}$");
+boolean isFullFormat = sheetName.matches("^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'\\d{2}$");
+if (sheetName != null && sheetName.length() >= 3) {
+	sheetName = sheetName.substring(0, 3);// Apr
+}
+boolean isShortFormat = validMonths.contains(sheetName);
+if (!isFullFormat && !isShortFormat) {
+	            	    	 
+	            	    	  //if in excel their is only 1 sheet and sheet name is not in formate like 'apr' or apr'25 then returning null
+	            	    	  //so that excel job tracker will be maintained as failed for that excel file
+	
+	// and if their is more sheet than 1, then not maintainting any log by calling GlobalExceptionHandler_AND_EmailSender.handleException()
+//	method, in this case only continueting iteration of sheets
+	            	    	  if(workbook.getNumberOfSheets()==1) {
+	            	    		  GlobalExceptionHandler_AND_EmailSender.handleException(
+	  	          	                    new PrintLog_AND_SendEmail_Exception(
+	  	          	                        "FundFlowEndBoundedExcelReader.class",
+	  	          	                        "readDataBetweenEndMarkers()",
+	  	          	                        excelFile.getName(),
+	  	          	                        "'Fund Flow' excel file have sheet named '"+sheetName+"' , Expected formats: Apr'25 OR Apr ",
+	  	          	                        "and also no other sheets except this format should be their, although other sheet will not be processed and these fault sheet will be ignored"
+	  	          	                    )
+	  	          	                );
+	            	    		  return null;
+	            	    	  }
+	          	                continue sheetIterator;   // continueing to other month sheets
+	            	    	
+	            	    }//END Match pattern like Apr'23, Jan'24 etc.
+	            	    
+
+	            	        System.err.println("Processing Sheet: " + sheetName);
+
+	            	        // Extract Month & Year
+	            	        if (sheetName != null && sheetName.length() >= 3) {
+	            	            monthlyValue = sheetName.substring(0, 3);// Apr
+	            	        }
+	            	        
+//	            	        if (sheetName.length() > 3) {
+	            	        //String year = sheetName.substring(4);       // 23
+//	             }
+	            	        
+	             
+	             
+	             
+	             
+	    
+	            //   Find boundaries
+	            int lastColumn = findLastColumnBeforeEnd(sheet.getRow(0),  evaluator);
+	            int lastRow = findLastRowBeforeEnd(sheet,  evaluator);
+
+	            System.err.println(lastColumn);
+	            System.err.println(lastRow);
+	            
+	            if(lastColumn== -101 || lastRow== -101) {
+	            	System.err.println("if(lastColumn==0101 || lastRow==0101) {");	
+	             //    	logger.info("not able to find END marker in column or row in ResultTransPackingEndBoundedExcelReader() in :: > "+ ResultPartsEndBoundedExcelReader.class.getName());
+	            	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                         "FundFlowEndBoundedExcelReader.class",
+	                         "readDataBetweenEndMarkers()",
+	                         excelFile.getName(),
+	                         "END marker not found in COLUMN or ROW in - Fund Flow sheet - "+sheetName,
+	                         "skipping this file and processing others"
+	                         
+	              )   
+	            			
+	            			);
+	            	return null;   // stop processing this sheet
+//System.exit(0);
+	            }
+	            //   Read data only inside END-to-END box
+	            for (int r = 1; r <= lastRow; r++) {
+	            	 
+	            	
+	            	
+	            	//if END marker not found then already thrown exception so log will be maintained and email will be sent
+	            	//and null, so caller of this method will continue it loop
+	            	 if(lastColumn==-101 || lastRow==-101 ) {
+	            		 return null;
+		            		// break;
+	            		 
+	            	 }
+	            	 
+	                  row = sheet.getRow(r);
+	                if (row == null) { ; continue ;}
+
+	                  ICICI = new Fund_Flow();
+	       		  MUFG  = new Fund_Flow();
+	       		  PettyCash  = new Fund_Flow();
+	       		   Bank_of_Maharashtra  = new Fund_Flow();
+	       		   MIZUHO  = new Fund_Flow();
+	       		   SMBC_Bank  = new Fund_Flow();
+	       		   UCO_Bank  = new Fund_Flow();
+	       		   SBI  = new Fund_Flow();
+	       		   Standard_Charted_Bank = new Fund_Flow();
+	       		   HDFC  = new Fund_Flow();
+	       		  Unspent_CSR_AC_2022$23  = new Fund_Flow();
+             
+	                
+	                for (int c = 0; c <= lastColumn; c++) {
+
+	                      value =  readCellValue(row.getCell(c),evaluator);
+	                     // System.err.println("-> "+value);
+	                    if(c==0) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		
+	                    		 double excelDate = Double.parseDouble(value.toString());
+
+	                             Date date = DateUtil.getJavaDate(excelDate);
+ SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+	                             value=  sdf.format(date);
+	                    	      ICICI.setDate(String.valueOf( value).trim());
+	            	       		  MUFG  .setDate(String.valueOf( value).trim());
+	            	       		  PettyCash .setDate(String.valueOf( value).trim());
+	            	       		   Bank_of_Maharashtra  .setDate(String.valueOf( value).trim());
+	            	       		   MIZUHO  .setDate(String.valueOf( value).trim());
+	            	       		   SMBC_Bank  .setDate(String.valueOf( value).trim());
+	            	       		   UCO_Bank  .setDate(String.valueOf( value).trim());
+	            	       		   SBI  .setDate(String.valueOf( value).trim());
+	            	       		   Standard_Charted_Bank .setDate(String.valueOf( value).trim());
+	            	       		   HDFC .setDate(String.valueOf( value).trim());
+	            	       		  Unspent_CSR_AC_2022$23  .setDate(String.valueOf( value).trim());
+	                         
+	            	       		System.err.println("-> "+value);
+	                    		
+	                    		//System.out.println("sssssssssssssssssssssssssssssssnnnnnnnnnnnnnnnnnnnnnnnooooooooooooooooooo");
+	                    		// System.err.println("->-> "+value);
+	                    		
+	                    		
+	    					}else {
+	    						ICICI.setDate("");
+	    						MUFG.setDate("");
+	    						PettyCash.setDate("");
+	    						Bank_of_Maharashtra.setDate("");
+	    						MIZUHO.setDate("");
+	    						SMBC_Bank.setDate("");
+	    						UCO_Bank.setDate("");
+	    						SBI.setDate("");
+	    						Standard_Charted_Bank.setDate("");
+	    						HDFC.setDate("");
+	    						Unspent_CSR_AC_2022$23.setDate("");
+	    						
+	    				 	}
+	                    	 
+	                    	 
+	                    }else if(c==1) {
+	                    	
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    	      ICICI.setDay(String.valueOf( value).trim());
+	            	       		  MUFG  .setDay(String.valueOf( value).trim());
+	            	       		  PettyCash .setDay(String.valueOf( value).trim());
+	            	       		   Bank_of_Maharashtra  .setDay(String.valueOf( value).trim());
+	            	       		   MIZUHO  .setDay(String.valueOf( value).trim());
+	            	       		   SMBC_Bank  .setDay(String.valueOf( value).trim());
+	            	       		   UCO_Bank  .setDay(String.valueOf( value).trim());
+	            	       		   SBI  .setDay(String.valueOf( value).trim());
+	            	       		   Standard_Charted_Bank .setDay(String.valueOf( value).trim());
+	            	       		   HDFC .setDay(String.valueOf( value).trim());
+	            	       		  Unspent_CSR_AC_2022$23  .setDay(String.valueOf( value).trim());
+	                         	
+	                    		
+	                    		
+	                    			                    		
+	                     	}else {
+	                     		ICICI.setDay("");
+	                     		MUFG.setDay("");
+	                     		PettyCash.setDay("");
+	                     		Bank_of_Maharashtra.setDay("");
+	                     		MIZUHO.setDay("");
+	                     		SMBC_Bank.setDay("");
+	                     		UCO_Bank.setDay("");
+	                     		SBI.setDay("");
+	                     		Standard_Charted_Bank.setDay("");
+	                     		HDFC.setDay("");
+	                     		Unspent_CSR_AC_2022$23.setDay("");
+	                    		
+	    						
+	    				 	}
+	                    	
+	                    	 
+	                    	columnIndex++;
+	                    }else if(c==2) {
+	                    	
+	                    		ICICI.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		MUFG.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		PettyCash.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		Bank_of_Maharashtra.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		MIZUHO.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		SMBC_Bank.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		UCO_Bank.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		SBI.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		Standard_Charted_Bank.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		HDFC.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    		Unspent_CSR_AC_2022$23.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    			                     	
+	                    }else if(c==3) {
+	                    	ICICI.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		MUFG.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		PettyCash.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		Bank_of_Maharashtra.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		MIZUHO.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		SMBC_Bank.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		UCO_Bank.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		SBI.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		Standard_Charted_Bank.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		HDFC.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		Unspent_CSR_AC_2022$23.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    
+	                    }else if(c==4) {
+	                    	ICICI.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		MUFG.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		PettyCash.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		Bank_of_Maharashtra.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		MIZUHO.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		SMBC_Bank.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		UCO_Bank.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		SBI.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		Standard_Charted_Bank.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		HDFC.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		Unspent_CSR_AC_2022$23.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    
+	                    }else if(c==5) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                            ICICI.setCategory("ICICI");
+	                            
+	                    		
+	                    		
+	    					}else {
+	    						ICICI.setCategory("ICICI");
+	    					}
+	                    	 
+	                    }else if(c==6) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		ICICI.setUSD(String.valueOf(value).trim());		
+	    					}else {
+	    						ICICI.setUSD("");
+	    					}
+	                     	columnIndex++;
+	                    }else if(c==7) {
+	                    	ICICI.setICICI_Investment_Payment_Capital(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    }else if(c==8) {
+	                    	ICICI.setICICI_For_Expenses_Payment_INR(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    }else if(c==9) {
+	                    	ICICI.setICICI_For_Dealer_Received_INR(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	                    }else if(c==10) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		MUFG.setCategory("MUFG");
+	                    		
+	                    		
+	    					}else {
+	    						MUFG.setCategory("MUFG");
+	    						
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==11) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		MUFG.setUSD(String.valueOf(value).trim()); 
+	    					}else {
+	    						MUFG.setUSD(""); 
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==12) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		MUFG.setINR(String.valueOf(value).trim()); 
+	    					}else {
+	    						MUFG.setINR("");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==13) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		MUFG.setYEN(String.valueOf(value).trim());
+	    					}else {
+	    						MUFG.setYEN("");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==14) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PettyCash.setCategory("PettyCash");
+	                    		
+	    					}else {
+	    						PettyCash.setCategory("PettyCash");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==15) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PettyCash.setINR(String.valueOf(value).trim());
+	    					}else {
+	    						PettyCash.setINR("");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==16) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PettyCash.setUSD(String.valueOf(value).trim());
+	    					}else {
+	    						PettyCash.setUSD("");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==17) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PettyCash.setJPY(String.valueOf(value).trim());
+	    					}else {
+	    						PettyCash.setJPY("");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==18) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            Bank_of_Maharashtra.setCategory("Bank of Maharashtra");
+	                             
+	                        }else {
+	                        	Bank_of_Maharashtra.setCategory("Bank of Maharashtra");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==19) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Bank_of_Maharashtra.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	Bank_of_Maharashtra.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==20) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            MIZUHO.setCategory("MIZUHO");
+	                        }else {
+	                        	MIZUHO.setCategory("MIZUHO");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==21) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	MIZUHO.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	MIZUHO.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==22) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	MIZUHO.setUSD(String.valueOf(value).trim());
+	                            
+	                        }else {
+	                        	MIZUHO.setUSD("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==23) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	MIZUHO.setEURO(String.valueOf(value).trim());
+	                        }else {
+	                        	MIZUHO.setEURO("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==24) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            SMBC_Bank.setCategory("SMBC Bank");
+	                        }else {
+	                        	SMBC_Bank.setCategory("SMBC Bank");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==25) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	SMBC_Bank.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	SMBC_Bank.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==26) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	SMBC_Bank.setYEN(String.valueOf(value).trim());
+	                            
+	                        }else {
+	                        	SMBC_Bank.setYEN("");
+	                            
+	                        }
+	                        columnIndex++;
+	                    }else if(c==27) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	SMBC_Bank.setUSD(String.valueOf(value).trim());
+	                        }else {
+	                        	SMBC_Bank.setUSD("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==28) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	UCO_Bank.setCategory("UCO Bank");
+	                        }else {
+	                        	UCO_Bank.setCategory("UCO Bank");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==29) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	UCO_Bank.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	UCO_Bank.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==30) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            SBI.setCategory("SBI");
+	                            
+	                        }else {
+	                        	SBI.setCategory("SBI");
+	                        	}
+	                        columnIndex++;
+	                    }else if(c==31) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	SBI.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	SBI.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==32) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Standard_Charted_Bank.setCategory("Standard Charted Bank");
+	                        }else {
+	                        	Standard_Charted_Bank.setCategory("Standard Charted Bank");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==33) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Standard_Charted_Bank.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	Standard_Charted_Bank.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==34) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Standard_Charted_Bank.setUSD(String.valueOf(value).trim());
+	                            
+	                        }else {
+	                        	
+	                        	Standard_Charted_Bank.setUSD("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==35) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	HDFC.setCategory("HDFC");
+	                        }else {
+	                        	HDFC.setCategory("HDFC");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==36) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	HDFC.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	HDFC.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==37) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Unspent_CSR_AC_2022$23.setCategory("Unspent CSR A/C 2022-23");
+	                        }else {
+	                        	Unspent_CSR_AC_2022$23.setCategory("Unspent CSR A/C 2022-23");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==38) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Unspent_CSR_AC_2022$23.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	Unspent_CSR_AC_2022$23.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==37) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Unspent_CSR_AC_2022$23.setCategory("Unspent CSR A/c 2023-24");
+	                        }else {
+	                        	Unspent_CSR_AC_2022$23.setCategory("Unspent CSR A/C 2022-23");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==38) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Unspent_CSR_AC_2022$23.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	Unspent_CSR_AC_2022$23.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }
+	                    
+	                    }
+	                columnIndex=0;
+	            
+	                 
+	                
+
+	           
+		                
+	             
+//System.out.println(rebate.toString());
+                 rowData.add(ICICI == null ? null :ICICI);
+                 rowData.add(MUFG == null ? null :MUFG);
+                 rowData.add(PettyCash == null ? null :PettyCash);
+                 rowData.add(Bank_of_Maharashtra == null ? null :Bank_of_Maharashtra);
+                 rowData.add(MIZUHO == null ? null :MIZUHO);
+                 rowData.add(SMBC_Bank == null ? null :SMBC_Bank);
+                 rowData.add(UCO_Bank == null ? null :UCO_Bank);
+             
+                 rowData.add(SBI == null ? null :SBI);
+                 rowData.add(Standard_Charted_Bank == null ? null :Standard_Charted_Bank);
+                 rowData.add(HDFC == null ? null :HDFC);
+                 rowData.add(Unspent_CSR_AC_2022$23 == null ? null :Unspent_CSR_AC_2022$23);
+              //                 rowData.stream().forEach(a->System.err.println(a));
+	            }//row iteration end
+	          
+	           
+	             }//END- sheet iteration 
+	             
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+//	            logger.info("not able to read data from cell in readDataBetweenEndMarkers()");
+
+	            GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                    "FundFlowEndBoundedExcelReader.class",
+	                    "readDataBetweenEndMarkers()",
+	                    excelFile.getName() ,
+	                    "not able to read data from cell for sheet of excel-> Fund Flow",
+	                   " so processing other files, check logs ->  " +e.toString()+  "  " +e.getMessage()
+	                    
+	          )  );
+//System.exit(0);
+	        }   finally {
+	            try {
+	                
+	                if (is != null) is.close();
+	            } catch (Exception ex) {
+	                ex.printStackTrace();
+	            }
+	        }
+
+	        return rowData;
+	    }
+
+	 public Result_Expense setMontlyValue(String month$sheetName,Result_Expense obj,String value) {
+		 
+		 
+		 if("Apr".startsWith(month$sheetName) || "Apr".contains(month$sheetName)) {
+			 
+			   obj.setApr( (null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("May".startsWith(month$sheetName) || "May".contains(month$sheetName)) {
+			    obj.setMay((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Jun".startsWith(month$sheetName) || "Jun".contains(month$sheetName)) {
+			    obj.setJun((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Jul".startsWith(month$sheetName) || "Jul".contains(month$sheetName)) {
+			    obj.setJul((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Aug".startsWith(month$sheetName) || "Aug".contains(month$sheetName)) {
+			    obj.setAug((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Sep".startsWith(month$sheetName) || "Sep".contains(month$sheetName)) {
+			    obj.setSep((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Oct".startsWith(month$sheetName) || "Oct".contains(month$sheetName)) {
+			    obj.setOct((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Nov".startsWith(month$sheetName) || "Nov".contains(month$sheetName)) {
+			    obj.setNov((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Dec".startsWith(month$sheetName) || "Dec".contains(month$sheetName)) {
+			    obj.setDec((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Jan".startsWith(month$sheetName) || "Jan".contains(month$sheetName)) {
+			    obj.setJan((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Feb".startsWith(month$sheetName) || "Feb".contains(month$sheetName)) {
+			    obj.setFeb((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Mar".startsWith(month$sheetName) || "Mar".contains(month$sheetName)) {
+			    obj.setMar((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}
+		 return obj;
+		 
+	 }
+	 
+	 
+	    //   Detect END in first row -> stop columns
+	    private   int findLastColumnBeforeEnd(Row headerRow, FormulaEvaluator evaluator) {
+try {
+	        int lastCol = headerRow.getLastCellNum();
+
+	        for (int c = 0; c < lastCol; c++) {
+
+	            Object val =  readCellValue(headerRow.getCell(c),evaluator);
+
+	            if (val != null && "END".equalsIgnoreCase(val.toString().trim())) {
+	                return c - 1;
+	            }else {
+	            	   
+	  	           // logger.info("not able to find END marker in column in findLastColumnBeforeEnd() in :: > "+ EndBoundedExcelReader.class.getName());
+	            	  // logger.info("not able to find END marker in column in findLastColumnBeforeEnd() in :: > "+ ResultTransPackingEndBoundedExcelReader.class.getName());
+
+	            }
+	        }
+	        
+}catch(Exception e) {e.printStackTrace();}
+	        return  -101;
+	    }
+
+	    //   Detect END in first column -> stop rows
+	    private   int findLastRowBeforeEnd(XSSFSheet sheet, FormulaEvaluator evaluator) {
+
+	        int lastRow = sheet.getLastRowNum();
+try {
+	        for (int r = 0; r <= lastRow; r++) {
+
+	            Row row = sheet.getRow(r);
+	            if (row == null) continue;
+
+	            Object val =  readCellValue(row.getCell(0),evaluator);
+
+	            if (val != null && "END".equalsIgnoreCase(val.toString().trim())) {
+	                return r - 1;
+	            }else {
+	            	   
+	  	           // logger.info("not able to find END marker in row in findLastRowBeforeEnd() in :: > "+ EndBoundedExcelReader.class.getName());
+	            	//  logger.info("not able to find END marker in row in findLastRowBeforeEnd() in :: > "+ ResultTransPackingEndBoundedExcelReader.class.getName());
+
+	            }
+	        }
+	    }catch(Exception e) {e.printStackTrace();}
+	        return -101;
+	    }
+	    
+	    
+	    public Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	    {
+	        Object cellValue = null;
+
+	        try
+	        {
+	            if (cell == null)
+	                return null;
+
+	            DataFormatter formatter = new DataFormatter();
+
+	            // ================= FORMULA =================
+	            if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	            {
+	                try
+	                {
+	                    CellValue eval = evaluator.evaluate(cell);
+
+	                    if (eval != null)
+	                    {
+	                        switch (eval.getCellType())
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                                double num = eval.getNumberValue();
+	                                cellValue = (long) num;   // 🔥 remove decimal
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = eval.getStringValue();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = eval.getBooleanValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                }
+	                catch (Exception e)
+	                {
+	                    // 🔥 IMPORTANT: fallback when POI fails (IFERROR, XLOOKUP)
+
+	                    switch (cell.getCachedFormulaResultType())
+	                    {
+	                        case Cell.CELL_TYPE_NUMERIC:
+	                            double num = cell.getNumericCellValue();
+	                            cellValue = (long) num;   // 🔥 remove decimal
+	                            break;
+
+	                        case Cell.CELL_TYPE_STRING:
+	                            cellValue = cell.getStringCellValue();
+	                            break;
+
+	                        case Cell.CELL_TYPE_BOOLEAN:
+	                            cellValue = cell.getBooleanCellValue();
+	                            break;
+
+	                        default:
+	                            cellValue = 0;
+	                    }
+	                }
+	            }
+
+	            // ================= NUMERIC =================
+	            else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+	            {
+	                double num = cell.getNumericCellValue();
+	                cellValue = (long) num;   // 🔥 remove decimal
+	            }
+
+	            // ================= STRING =================
+	            else if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+	            {
+	                cellValue = cell.getStringCellValue();
+	            }
+
+	            // ================= CLEANUP =================
+	            if (cellValue != null)
+	            {
+	                String val = cellValue.toString();
+
+	                if (val.contains(",")) val = val.replace(",", "");
+	                if (val.contains("* ")) val = val.replace("* ", "");
+
+	                cellValue = val.trim();
+	            }
+	        }
+	        catch (Exception e)
+	        {
+
+	        	e.printStackTrace();
+	            logger.info("Exception in readCellValue: " + e.toString() + " " + e.getMessage());
+
+	            cellValue = null;
+
+	            GlobalExceptionHandler_AND_EmailSender.handleException(
+	                new PrintLog_AND_SendEmail_Exception(
+	                    "FundFlowEndBoundedExcelReader.class",
+	                    "readCellValue()",
+	                    excelFile2.getName(),
+	                    "not able to read data from cell for sheet of excel -> Fund Flow",
+	                    "so processing other files, check logs -> " + e.toString() + " " + e.getMessage()
+	                )
+	            );
+	        }
+
+	        return cellValue;
+	    }
+	   /*
+	    public Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	    {
+	    	CellValue evaluatedValue =null;
+	        Object cellValue = null;
+
+	        try
+	        {
+	            if (cell == null)
+	                return null;
+
+	            DataFormatter formatter = new DataFormatter();
+
+	            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+	            {
+	                cellValue = formatter.formatCellValue(cell);
+	            }
+	            else if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+	            {
+	                cellValue = cell.getStringCellValue();
+	            }
+	            else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	            {
+	                String formula = cell.getCellFormula();
+
+	                // Try evaluating (works for SUM, IF, etc.)
+	                evaluatedValue = evaluator.evaluate(cell);
+	                try
+	                {
+
+	                    if (evaluatedValue != null)
+	                    {
+	                        switch (evaluatedValue.getCellType())
+	                        {
+	                             case Cell.CELL_TYPE_NUMERIC:
+//	                               cellValue = formatter.formatCellValue(cell, evaluator);
+	                            	 cellValue = String.valueOf(evaluatedValue.getNumberValue());
+//	                            	 System.err.println(cellValue);
+	                                break;
+	                                
+
+//	                        case Cell.CELL_TYPE_NUMERIC:
+//	                            cellValue = evaluatedValue.getNumberValue();
+//	                            break;
+	                            
+	                             
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = evaluatedValue.getStringValue();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = evaluatedValue.getBooleanValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                }
+	                catch (Exception ex)
+	                {
+	                    // POI cannot evaluate (example: XLOOKUP)
+	                    cellValue = null;
+	                }
+
+	                
+//	                 * If evaluator failed (XLOOKUP case),
+//	                 * read cached Excel result
+	                 
+	                if (cellValue == null)
+	                {
+	                    try
+	                    {
+	                        int cachedType = cell.getCachedFormulaResultType();
+
+	                        switch (cachedType)
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                                cellValue = formatter.formatCellValue(cell);
+	                             	// cellValue = String.valueOf(evaluatedValue.getNumberValue());
+	                            	 System.err.println(cellValue);
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = cell.getRichStringCellValue().getString();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = cell.getBooleanCellValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                    catch (IllegalStateException ignore)
+	                    {
+	                        cellValue = null;
+	                    }
+	                }
+
+	                // IFERROR(...,"0") fallback
+	                if (cellValue == null || "".equals(cellValue))
+	                {
+	                    cellValue = "0";
+	                }
+	            }
+
+	            // cleanup formatting
+	            if (cellValue != null)
+	            {
+	                String val = cellValue.toString();
+	                if (val.contains(",")) val = val.replace(",", "");
+	                if (val.contains("* ")) val = val.replace("* ", "");
+	                cellValue = val.trim();
+	            }
+	        }
+	        catch (Exception e)
+	        {
+	        	e.printStackTrace();
+	            logger.info("Exception in readCellValue: " + e.getMessage());
+	            cellValue = null;
+	            GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                    "ResultTransPackingEndBoundedExcelReader_new.class",
+	                    "readCellValue()",
+	                    excelFile2.getName() ,
+	                    "not able to read data from cell for sheet -> Result Trans Packing",
+	                   " so processing other files, check logs ->  " +e.toString()+  "  " +e.getMessage()
+	                    
+	            ));
+	        }
+
+	        return cellValue;
+	    }
+	    
+	    */
+	/*
+	public   Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	{
+		Object cellValue = null;
+		try {
+			if (null != cell) {
+				
+//				  check for Cell Type and format accordingly
+				
+				if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+					
+					// set cell type as String
+//					cell.setCellType(Cell.CELL_TYPE_STRING);
+//					cellValue = cell.getStringCellValue();
+					DataFormatter dmt = new DataFormatter();
+					cellValue = dmt.formatCellValue(cell);
+					if(null!=cellValue && cellValue.toString().contains(","))
+					{
+						cellValue=  cellValue.toString().replace(",", "");
+					}
+					if(null!=cellValue && !"".equals(cellValue))
+					{
+						cellValue = cellValue.toString().replace("* ", "");
+					}
+					dmt = null;
+				}
+				else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+				{
+				    DataFormatter formatter = new DataFormatter();
+
+				    // Evaluate the formula result
+				    CellValue evaluatedValue = evaluator.evaluate(cell);
+
+				    if (evaluatedValue != null)
+				    {
+				        switch (evaluatedValue.getCellType())
+				        {
+				            case Cell.CELL_TYPE_NUMERIC:
+				                cellValue = formatter.formatCellValue(cell, evaluator);
+				                if(null!=cellValue && cellValue.toString().contains(","))
+								{
+									cellValue=  cellValue.toString().replace(",", "");
+								}
+								if(null!=cellValue && !"".equals(cellValue))
+								{
+									cellValue = cellValue.toString().replace("* ", "");
+								}
+				                break;
+
+				            case  Cell.CELL_TYPE_STRING:
+				                cellValue = evaluatedValue.getStringValue();
+				                break;
+
+				            case Cell.CELL_TYPE_BOOLEAN:
+				                cellValue = evaluatedValue.getBooleanValue();
+				                break;
+
+				            case Cell.CELL_TYPE_BLANK:
+				            	 
+				            	
+				                cellValue = null;
+				                break;
+
+				            default:
+				                cellValue = formatter.formatCellValue(cell);
+				        }
+				    }
+				}
+				else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+					cellValue = cell.getStringCellValue();
+				}
+			}
+		} catch (Exception e) {
+			//printStackTraceToLogs(Utilities.class.getName(), "readCellValue()", e);
+	            logger.info("Exception in converting cell value to object in readCellValue (so returning null) in :: > "+ EndBoundedExcelReader.class.getName());
+
+			// set cellValue to null
+			cellValue = null;
+		}
+		if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	    {
+			  DataFormatter formatter = new DataFormatter();
+			   int cachedType = cell.getCachedFormulaResultType();
+			   if(cachedType==Cell.CELL_TYPE_NUMERIC) {
+				   cellValue = formatter.formatCellValue(cell);
+			   }else if(cachedType==Cell.CELL_TYPE_STRING) {
+				   cellValue = cell.getRichStringCellValue().getString();
+			   }else if(cachedType==Cell.CELL_TYPE_BOOLEAN) {
+				   cellValue = cell.getBooleanCellValue();
+			   }else if(Cell.CELL_TYPE_BLANK==cachedType) {
+				   cellValue = null;
+			   }
+			   
+
+			 
+//cellValue = formatter.formatCellValue(cell);
+System.out.println(String.valueOf(  cellValue));
+ 
+	    }
+		return cellValue;
+	
+	
+	
+	
+	}
+	*/
+}

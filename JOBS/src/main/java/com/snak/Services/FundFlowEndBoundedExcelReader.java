@@ -65,6 +65,8 @@ String completed=null;
 		 Fund_Flow Standard_Charted_Bank= null;
 		 Fund_Flow HDFC = null;
 		 Fund_Flow Unspent_CSR_AC_2022$23 = null;
+		 Fund_Flow Unspent_CSR_AC_2023$24 = null;
+		 Fund_Flow Unspent_CSR_AC_2024$25 = null;
 		 
 int temp=1;
 String monthlyValue=null;
@@ -213,8 +215,11 @@ if (!isFullFormat && !isShortFormat) {
 	       		   Standard_Charted_Bank = new Fund_Flow();
 	       		   HDFC  = new Fund_Flow();
 	       		  Unspent_CSR_AC_2022$23  = new Fund_Flow();
-             
+	     		  Unspent_CSR_AC_2023$24 = new Fund_Flow();
+	     		  Unspent_CSR_AC_2024$25 = new Fund_Flow();
 	                
+	     		  
+	     		  
 	                for (int c = 0; c <= lastColumn; c++) {
 
 	                      value =  readCellValue(row.getCell(c),evaluator);
@@ -239,7 +244,8 @@ if (!isFullFormat && !isShortFormat) {
 	            	       		   Standard_Charted_Bank .setDate(String.valueOf( value).trim());
 	            	       		   HDFC .setDate(String.valueOf( value).trim());
 	            	       		  Unspent_CSR_AC_2022$23  .setDate(String.valueOf( value).trim());
-	                         
+	            	       		Unspent_CSR_AC_2023$24.setDate(String.valueOf( value).trim());
+	            	       		Unspent_CSR_AC_2024$25.setDate(String.valueOf( value).trim());
 	            	       		System.err.println("-> "+value);
 	                    		
 	                    		//System.out.println("sssssssssssssssssssssssssssssssnnnnnnnnnnnnnnnnnnnnnnnooooooooooooooooooo");
@@ -258,7 +264,8 @@ if (!isFullFormat && !isShortFormat) {
 	    						Standard_Charted_Bank.setDate("");
 	    						HDFC.setDate("");
 	    						Unspent_CSR_AC_2022$23.setDate("");
-	    						
+	    						Unspent_CSR_AC_2023$24.setDate("");
+	            	       		Unspent_CSR_AC_2024$25.setDate("");
 	    				 	}
 	                    	 
 	                    	 
@@ -277,7 +284,8 @@ if (!isFullFormat && !isShortFormat) {
 	            	       		   Standard_Charted_Bank .setDay(String.valueOf( value).trim());
 	            	       		   HDFC .setDay(String.valueOf( value).trim());
 	            	       		  Unspent_CSR_AC_2022$23  .setDay(String.valueOf( value).trim());
-	                         	
+		    						Unspent_CSR_AC_2023$24 .setDay(String.valueOf( value).trim());
+		            	       		Unspent_CSR_AC_2024$25 .setDay(String.valueOf( value).trim());
 	                    		
 	                    		
 	                    			                    		
@@ -293,7 +301,9 @@ if (!isFullFormat && !isShortFormat) {
 	                     		Standard_Charted_Bank.setDay("");
 	                     		HDFC.setDay("");
 	                     		Unspent_CSR_AC_2022$23.setDay("");
-	                    		
+	                     		Unspent_CSR_AC_2023$24 .setDay("");
+	            	       		Unspent_CSR_AC_2024$25.setDay("");
+                    		
 	    						
 	    				 	}
 	                    	
@@ -312,7 +322,8 @@ if (!isFullFormat && !isShortFormat) {
 	                    		Standard_Charted_Bank.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
 	                    		HDFC.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
 	                    		Unspent_CSR_AC_2022$23.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
-	                    			                     	
+	                    		Unspent_CSR_AC_2023$24 .setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+	            	       		Unspent_CSR_AC_2024$25.setMonthName(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");          
 	                    }else if(c==3) {
 	                    	ICICI.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
                     		MUFG.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
@@ -325,7 +336,9 @@ if (!isFullFormat && !isShortFormat) {
                     		Standard_Charted_Bank.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
                     		HDFC.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
                     		Unspent_CSR_AC_2022$23.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
-	                    
+                    		Unspent_CSR_AC_2023$24.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		Unspent_CSR_AC_2024$25.setFy(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                	        
 	                    }else if(c==4) {
 	                    	ICICI.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
                     		MUFG.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
@@ -338,7 +351,9 @@ if (!isFullFormat && !isShortFormat) {
                     		Standard_Charted_Bank.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
                     		HDFC.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
                     		Unspent_CSR_AC_2022$23.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
-	                    
+                    		Unspent_CSR_AC_2023$24.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+                    		Unspent_CSR_AC_2024$25.setDataType(null!=value && !"".equals(value) && !"-".equals(value.toString().trim())?String.valueOf(value).trim():"");
+    	                    
 	                    }else if(c==5) {
 	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
 	    					{
@@ -607,7 +622,42 @@ if (!isFullFormat && !isShortFormat) {
 	                        	Unspent_CSR_AC_2022$23.setINR("");
 	                        }
 	                        columnIndex++;
-	                    }	                    }
+	                    }else if(c==39) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Unspent_CSR_AC_2023$24.setCategory("Unspent CSR A/c 2023-24");
+	                        }else {
+	                        	Unspent_CSR_AC_2023$24.setCategory("Unspent CSR A/c 2023-24");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==40) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Unspent_CSR_AC_2023$24.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	Unspent_CSR_AC_2023$24.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==41) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Unspent_CSR_AC_2024$25.setCategory("Unspent CSR A/c 2024-25");
+	                        }else {
+	                        	Unspent_CSR_AC_2024$25.setCategory("Unspent CSR A/c 2024-25");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==42) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	Unspent_CSR_AC_2024$25.setINR(String.valueOf(value).trim());
+	                        }else {
+	                        	Unspent_CSR_AC_2024$25.setINR("");
+	                        }
+	                        columnIndex++;
+	                    }
+	                    
+	                    
+	                    }
 	                columnIndex=0;
 	            
 	                 
@@ -629,6 +679,8 @@ if (!isFullFormat && !isShortFormat) {
                  rowData.add(Standard_Charted_Bank == null ? null :Standard_Charted_Bank);
                  rowData.add(HDFC == null ? null :HDFC);
                  rowData.add(Unspent_CSR_AC_2022$23 == null ? null :Unspent_CSR_AC_2022$23);
+                 rowData.add(Unspent_CSR_AC_2023$24 == null ? null :Unspent_CSR_AC_2023$24);
+                 rowData.add(Unspent_CSR_AC_2024$25 == null ? null :Unspent_CSR_AC_2024$25);
               //                 rowData.stream().forEach(a->System.err.println(a));
 	            }//row iteration end
 	          

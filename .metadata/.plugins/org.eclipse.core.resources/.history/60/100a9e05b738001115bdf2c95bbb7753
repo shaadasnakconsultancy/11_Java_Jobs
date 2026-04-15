@@ -1,0 +1,47 @@
+#updated on -
+#Mon Apr 13 14:46:10 IST 2026
+debug=true
+directory.path.of.fundflow.fundstatus=C\:\\Jobs\\FY2024-25\\FUNDFLOW\\FUND_STATUS\\
+directory.path.of.parent.folder.of.financialfolders=C\:\\Jobs\\
+directory.path.of.pl.actual=C\:\\Jobs\\FY2023-24\\PL\\ACTUAL\\
+directory.path.of.pl.budget=C\:\\Jobs\\FY2023-24\\PL\\BUDGET\\
+directory.path.of.pl.expense=C\:\\Jobs\\FY2023-24\\PL\\RESULT_EXPENSE\\
+job.batch.id=124
+job.status.txt.file.folder=C\:\\Jobs\\JOB_LOGS\\JAVA_JOBS_STATUS_REPORT.txt
+logging.level.root=DEBUG
+logs.message=
+logs.present=no.logs.areNot.present
+properties.file.path.outside.jar=C\:/Users/ShaadAnsari/Downloads/WORK/Eclipse Workspaces/JOBS(all merged)/JOBS/src/main/resources/application.properties
+send.email.from=mdshaadansari5@gmail.com
+send.email.to=mdshaadansari5@gmail.com
+spring.application.name=JAVAJOBS
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.datasource.password=shaad1234
+spring.datasource.url=jdbc\:sqlserver\://localhost\:1433;databaseName\=FinanceDashboard
+spring.datasource.username=sa
+
+#spring.datasource.password=SnaK@5421I
+#spring.datasource.url=jdbc\:sqlserver\://139.59.4.149\:1433;databaseName\=FinanceDashboard;
+#spring.datasource.username=sa
+
+spring.devtools.restart.enabled=false
+
+
+
+
+# Small pool is enough (batch job, not high concurrency)
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+
+# Keep idle connections shorter (not very important for batch)
+spring.datasource.hikari.idle-timeout=900000   
+
+# \uD83D\uDD25 IMPORTANT: Must be > your job duration
+spring.datasource.hikari.max-lifetime=4700000   
+
+# Keep connection alive during long idle gaps between steps
+spring.datasource.hikari.keepalive-time=600000    
+
+# Default is fine
+spring.datasource.hikari.connection-timeout=30000
+spring.datasource.hikari.validation-timeout=5000
