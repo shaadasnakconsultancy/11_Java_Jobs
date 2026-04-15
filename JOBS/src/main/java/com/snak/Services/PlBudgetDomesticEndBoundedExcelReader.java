@@ -51,25 +51,59 @@ public class  PlBudgetDomesticEndBoundedExcelReader{
 //	            XSSFSheet sheet = workbook.getSheet("Domestic");
 	             XSSFSheet sheet = null;
 	             String sheetName=null;
+	             int matchCount = 0;
+	             String matchedSheetName = null;
 	             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
 	                  sheetName = workbook.getSheetName(i);
 
 	                 if (sheetName != null && sheetName.toLowerCase().contains("domestic")) {
-	                	 System.err.println("sheet with 'domestic' in it: " + sheetName);
-	                     sheet = workbook.getSheetAt(i);
-	                     break;
+	                	 
+	                	 System.err.println(excelFile+" have sheet with 'domestic' in it: " + sheetName);
+	                	   matchCount++;
+	                       matchedSheetName = sheetName;
+	                       
+	                       // If more than one match, no need to continue
+	                       if (matchCount > 1) {
+	                           System.err.println("Multiple sheets found with 'domestic' in name");
+	                           GlobalExceptionHandler_AND_EmailSender.handleException(
+	           	                    new PrintLog_AND_SendEmail_Exception(
+	           	                        "PlBudgetDomesticEndBoundedExcelReader.class",
+	           	                        "readDataBetweenEndMarkers()",
+	           	                        excelFile.getName(),
+	           	                        "in this excel file their are more that one sheet with name 'domestic' in it, their should be only one sheet with name 'domestic' ",
+	           	                        "not processing domestic data of this excel, moving to other year excel files"
+	           	                    )
+	           	                );
+	                           return null;
+	                       }
 	                 }else {
 //	                	 sheet=null; 
 	                 }
 	             }
+	          // After loop decision
+	             if (matchCount == 1) {
+	                 System.out.println("Sheet found: " + matchedSheetName);
+	                 sheet = workbook.getSheet(matchedSheetName);
+	             } else {
+	            	 GlobalExceptionHandler_AND_EmailSender.handleException(
+	 	                    new PrintLog_AND_SendEmail_Exception(
+	 	                        "PlBudgetDomesticEndBoundedExcelReader.class ",
+	 	                        "readDataBetweenEndMarkers() ",
+	 	                        excelFile.getName(),
+	 	                        "'Domestic' sheet not found in Pl Budget exlec file ",
+	 	                        "Skipping this excel file and moving to other years excel files"
+	 	                    )
+	 	                );
+	                 return null;
+	             }
 	            if (sheet == null) {
 	                GlobalExceptionHandler_AND_EmailSender.handleException(
 	                    new PrintLog_AND_SendEmail_Exception(
-	                        "PlBudgetDomesticEndBoundedExcelReader.class",
-	                        "readDataBetweenEndMarkers()",
+	                        "PlBudgetDomesticEndBoundedExcelReader.class ",
+	                        "readDataBetweenEndMarkers() ",
 	                        excelFile.getName(),
-	                        "'Domestic' sheet not found in Pl Budget exlec file",
-	                        "Skipping this sheet"
+	                        "'Domestic' sheet not found in Pl Budget exlec file ",
+	                        "Skipping this excel file and moving to other years excel files"
 	                    )
 	                );
 	                return null;   // stop processing this sheet

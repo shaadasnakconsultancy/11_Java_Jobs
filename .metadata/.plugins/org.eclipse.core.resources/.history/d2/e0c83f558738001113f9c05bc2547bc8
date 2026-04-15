@@ -1,0 +1,806 @@
+package com.snak.Services;
+ 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.snak.UserDefiendExceptionHandler$Logging.GlobalExceptionHandler_AND_EmailSender;
+import com.snak.UserDefiendExceptionHandler$Logging.PrintLog_AND_SendEmail_Exception;
+import com.snak.dto.PlBudgetDomestic_DTO;
+import com.snak.dto.Result_Pro_Ass; 
+
+@Service
+public class  PlBudgetDomesticEndBoundedExcelReader{
+	static Logger logger=LoggerFactory.getLogger(PlBudgetDomesticEndBoundedExcelReader.class);
+	Object value =null;
+	int columnIndex=0;
+	@Autowired
+	GlobalExceptionHandler_AND_EmailSender GlobalExceptionHandler_AND_EmailSender;
+	File excelFile2=null;
+	Row row=null;
+	PlBudgetDomestic_DTO PlBudgetDomestic_DTO=null;
+	List<PlBudgetDomestic_DTO> rowData = new ArrayList<>();
+	 public   List<PlBudgetDomestic_DTO> readDataBetweenEndMarkers(File excelFile) {
+
+
+
+		 InputStream is=null;
+		 XSSFWorkbook workbook=null;
+	        try {
+
+	        	excelFile2=excelFile;
+	        	  is = new FileInputStream(excelFile);
+	               workbook = new XSSFWorkbook(is);
+	          // ⭐ Required to calculate formulas
+	             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+//	             evaluator.evaluateAll();
+//	            XSSFSheet sheet = workbook.getSheet("Domestic");
+	             XSSFSheet sheet = null;
+	             String sheetName=null;
+	             int matchCount = 0;
+	             String matchedSheetName = null;
+	             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+	                  sheetName = workbook.getSheetName(i);
+
+	                 if (sheetName != null && sheetName.toLowerCase().contains("domestic")) {
+	                	 
+	                	 System.err.println("sheet with 'domestic' in it: " + sheetName);
+	                	   matchCount++;
+	                       matchedSheetName = sheetName;
+	                       
+	                       // If more than one match, no need to continue
+	                       if (matchCount > 1) {
+	                           System.err.println("Multiple sheets found with 'domestic' in name");
+	                           GlobalExceptionHandler_AND_EmailSender.handleException(
+	           	                    new PrintLog_AND_SendEmail_Exception(
+	           	                        "PlBudgetDomesticEndBoundedExcelReader.class",
+	           	                        "readDataBetweenEndMarkers()",
+	           	                        excelFile.getName(),
+	           	                        "in this excel file their are more that one sheet with name 'domestic' in it, their should be only one sheet with name 'domestic' ",
+	           	                        "not processing domestic data of this excel, moving to other year excel files"
+	           	                    )
+	           	                );
+	                           return null;
+	                       }
+	                 }else {
+//	                	 sheet=null; 
+	                 }
+	             }
+	          // After loop decision
+	             if (matchCount == 1) {
+	                 System.out.println("Sheet found: " + matchedSheetName);
+	                 sheet = workbook.getSheet(matchedSheetName);
+	             } else {
+	            	 GlobalExceptionHandler_AND_EmailSender.handleException(
+	 	                    new PrintLog_AND_SendEmail_Exception(
+	 	                        "PlBudgetDomesticEndBoundedExcelReader.class",
+	 	                        "readDataBetweenEndMarkers()",
+	 	                        excelFile.getName(),
+	 	                        "'Domestic' sheet not found in Pl Budget exlec file",
+	 	                        "Skipping this excel file"
+	 	                    )
+	 	                );
+	                 return null;
+	             }
+	            if (sheet == null) {
+	                GlobalExceptionHandler_AND_EmailSender.handleException(
+	                    new PrintLog_AND_SendEmail_Exception(
+	                        "PlBudgetDomesticEndBoundedExcelReader.class",
+	                        "readDataBetweenEndMarkers()",
+	                        excelFile.getName(),
+	                        "'Domestic' sheet not found in Pl Budget exlec file",
+	                        "Skipping this sheet"
+	                    )
+	                );
+	                return null;   // stop processing this sheet
+	            }
+System.out.println(sheet.getSheetName());
+	            //   Find boundaries
+	            int lastColumn = findLastColumnBeforeEnd(sheet.getRow(0),  evaluator);
+	            int lastRow = findLastRowBeforeEnd(sheet,  evaluator);
+
+	            if(lastColumn==-101 || lastRow==-101) {
+	             //    	logger.info("not able to find END marker in column or row in ResultTransPackingEndBoundedExcelReader() in :: > "+ ResultPartsEndBoundedExcelReader.class.getName());
+	            	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                         "PlBudgetDomesticEndBoundedExcelReader.class",
+	                         "readDataBetweenEndMarkers()",
+	                         excelFile.getName(),
+	                         "END marker not found in COLUMN or ROW in sheet "+sheetName+ " in excel file "+excelFile,
+	                         " so for pl budget domestic skipping this file and processing others, Pl Budget excel should have sheet haveing 'domestic' in its name"
+	                         
+	              )   );
+	            	return null;   // stop processing this sheet
+//System.exit(0);
+	            }
+	            //   Read data only inside END-to-END box
+	            for (int r = 1; r <= lastRow; r++) {
+	            	//if END marker not found then already thrown exception so log will be maintained and email will be sent
+	            	//and null, so caller of this method will continue it loop
+	            	 if(lastColumn==-101 || lastRow==-101) {
+	            		 return null;
+		            		// break;
+	            		 
+	            	 }
+	                  row = sheet.getRow(r);
+	                if (row == null) { ; continue ;}
+
+	                PlBudgetDomestic_DTO=new PlBudgetDomestic_DTO();	                
+	                for (int c = 0; c <= lastColumn; c++) {
+
+	                      value =  readCellValue(row.getCell(c),evaluator);
+	                    if(c==0) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    	 
+	                    		
+	                    		PlBudgetDomestic_DTO.setFy(String.valueOf( value).trim());
+ 	
+	    					}else {
+	    						PlBudgetDomestic_DTO.setFy("0");	    					}
+	                    	 
+	                    	 
+	                    }else if(c==1) {
+	                    	
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PlBudgetDomestic_DTO.setDataType(String.valueOf(value).trim());
+	                    			    					}else {
+	                    	PlBudgetDomestic_DTO.setDataType("");
+		    				}
+	                    	
+	                    	 
+	                    	
+	                    }else if(c==2) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PlBudgetDomestic_DTO.setMarket(String.valueOf(value).trim());
+	                    		}else {
+	                    			PlBudgetDomestic_DTO.setMarket("");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==3) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+
+	                    		PlBudgetDomestic_DTO.setCountry(String.valueOf(value).trim());
+	                    	
+	    					}else { 
+	    						PlBudgetDomestic_DTO.setCountry("");
+	    					
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==4) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		{
+	                    			PlBudgetDomestic_DTO.setXcode(String.valueOf(value).trim());
+	                    		    
+	                    		}
+	    					}else {
+	    						{
+	    							PlBudgetDomestic_DTO.setXcode("");
+	    						}
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==5) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		{
+	                    			PlBudgetDomestic_DTO.setModelCode(String.valueOf(value).trim());
+	                    		    
+	                    		}
+	    					}else {
+	    						{
+	    							PlBudgetDomestic_DTO.setModelCode("");
+	    						}
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==6) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		{
+	                    			PlBudgetDomestic_DTO.setExportCode(String.valueOf(value).trim());
+	                    			}
+	    					}else {
+
+	    						{
+	    							PlBudgetDomestic_DTO.setExportCode("");
+	    						    
+	    						}
+	    					
+	    					}
+	                     	columnIndex++;
+	                    }else if(c==7) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		{
+	                    			PlBudgetDomestic_DTO.setTradeType(String.valueOf(value).trim());
+	                    		    
+	                    		}
+	    					}else {
+	    						{
+	    							
+	    							PlBudgetDomestic_DTO.setTradeType("");
+	    						    
+	    						}
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==8) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		{
+	                    			PlBudgetDomestic_DTO.setOrderNumber(String.valueOf(value).trim());
+	                    		    
+	                    		}
+	    					}else {
+	    						{
+	    							
+	    							PlBudgetDomestic_DTO.setOrderNumber("");
+	    						    
+	    						}
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==9) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		{
+	                    			PlBudgetDomestic_DTO.setMonth(String.valueOf(value).trim());
+	                    		    
+	                    		}
+	    					}else {
+	    						{
+	    							PlBudgetDomestic_DTO.setMonth("");
+	    						    
+	    						}
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==10) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PlBudgetDomestic_DTO.setSalesUnits(String.valueOf(value).trim());
+	    					}else {
+	    						PlBudgetDomestic_DTO.setSalesUnits("");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==11) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PlBudgetDomestic_DTO.setCurrency(String.valueOf(value).trim());
+	    					}else {
+	    						PlBudgetDomestic_DTO.setCurrency("");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==12) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		PlBudgetDomestic_DTO.setOriginalCurrency(String.valueOf(value).trim());
+	    					}else {
+	    						PlBudgetDomestic_DTO.setOriginalCurrency("");
+	    					}
+	                    	 columnIndex++;
+	                    }
+	                 // ================= SALES =================
+	                    else if(c==13){ PlBudgetDomestic_DTO.setSalesAmountInrGross(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==14){ PlBudgetDomestic_DTO.setSaSalesRebate(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==15){ PlBudgetDomestic_DTO.setSaInsuranceRecovery(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==16){ PlBudgetDomestic_DTO.setSaFreightRecovery(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==17){ PlBudgetDomestic_DTO.setSalesAmountInr(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+
+	                    // ================= VARIABLE FACTORY =================
+	                    else if(c==18){ PlBudgetDomestic_DTO.setVariableFactoryCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==19){ PlBudgetDomestic_DTO.setVfcMaterialsComponents(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==20){ PlBudgetDomestic_DTO.setVfcLaborExpenses(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==21){ PlBudgetDomestic_DTO.setVfcFuel(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==22){ PlBudgetDomestic_DTO.setVfcSubmaterial(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==23){ PlBudgetDomestic_DTO.setVfcRoyalty(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==24){ PlBudgetDomestic_DTO.setVfcOthers(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==25){ PlBudgetDomestic_DTO.setVfcTotal(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+
+	                    // ================= VARIABLE SELLING =================
+	                    else if(c==26){ PlBudgetDomestic_DTO.setVariableSellingCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==27){ PlBudgetDomestic_DTO.setVscCommodityTax(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==28){ PlBudgetDomestic_DTO.setVscTransportation(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==29){ PlBudgetDomestic_DTO.setVscPackingExpenses(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==30){ PlBudgetDomestic_DTO.setVscSalesRebate(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==31){ PlBudgetDomestic_DTO.setVscSalesCommission(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==32){ PlBudgetDomestic_DTO.setVscOthers(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==33){ PlBudgetDomestic_DTO.setVscTotal(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+
+	                    // ================= VARIABLE TOTAL =================
+	                    else if(c==34){ PlBudgetDomestic_DTO.setVariableCostTotal(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==35){ PlBudgetDomestic_DTO.setVctMarginalProfit(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==36){ PlBudgetDomestic_DTO.setVctRatio(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+
+	                    // ================= FIXED FACTORY =================
+	                    else if(c==37){ PlBudgetDomestic_DTO.setFixedFactoryCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==38){ PlBudgetDomestic_DTO.setFfcIndirectLabourCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==39){ PlBudgetDomestic_DTO.setFfcDepreciationDiesJigs(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==40){ PlBudgetDomestic_DTO.setFfcDepreciationOthers(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==41){ PlBudgetDomestic_DTO.setFfcConsumableCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==42){ PlBudgetDomestic_DTO.setFfcSupplementaryDeptCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==43){ PlBudgetDomestic_DTO.setFfcOthers(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==44){ PlBudgetDomestic_DTO.setFfcTotal(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+
+	                    // ================= CONTRIBUTION =================
+	                    else if(c==45){ PlBudgetDomestic_DTO.setContributionProfitByModel(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==46){ PlBudgetDomestic_DTO.setContributionRatio(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+
+	                    // ================= SELLING =================
+	                    else if(c==47){ PlBudgetDomestic_DTO.setSellingExpenses(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==48){ PlBudgetDomestic_DTO.setSeMarketingExpensesFixed(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==49){ PlBudgetDomestic_DTO.setSeSalesDeptExpenses(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==50){ PlBudgetDomestic_DTO.setSeOthers(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==51){ PlBudgetDomestic_DTO.setSeTotal(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==52){ PlBudgetDomestic_DTO.setSeOperatingContributionProfit(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==53){ PlBudgetDomestic_DTO.setSeRatio(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+
+	                    // ================= ADMIN =================
+	                    else if(c==54){ PlBudgetDomestic_DTO.setAdministrativeExpenses(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==55){ PlBudgetDomestic_DTO.setAeGeneralAdExpenses(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==56){ PlBudgetDomestic_DTO.setAeWarrantyExpenses(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==57){ PlBudgetDomestic_DTO.setAeOthers(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==58){ PlBudgetDomestic_DTO.setAeTotal(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==59){ PlBudgetDomestic_DTO.setAeOperatingProfit(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==60){ PlBudgetDomestic_DTO.setAeRatio(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+
+	                    // ================= COMPONENT =================
+	                    else if(c==61){ PlBudgetDomestic_DTO.setComponentCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==62){ PlBudgetDomestic_DTO.setCcKdFromSuzuki(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==63){ PlBudgetDomestic_DTO.setCcImportFromOther(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==64){ PlBudgetDomestic_DTO.setCcDomesticVendors(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==65){ PlBudgetDomestic_DTO.setCcMsilEnginePrice(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==66){ PlBudgetDomestic_DTO.setCcSubcontractorsCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==67){ PlBudgetDomestic_DTO.setCcConversionCost(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==68){ PlBudgetDomestic_DTO.setCcOthers(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                    else if(c==69){ PlBudgetDomestic_DTO.setCcTotal(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()) ? String.valueOf(value).trim():""); columnIndex++; }
+	                
+	                
+	                
+	                }
+	                columnIndex=0;
+	               rowData.add(PlBudgetDomestic_DTO == null ? null :PlBudgetDomestic_DTO);
+	            
+
+	                  
+	                
+	                
+	            }
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+//	            logger.info("not able to read data from cell in readDataBetweenEndMarkers()");
+
+	            GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                    "PlBudgetDomesticEndBoundedExcelReader.class",
+	                    "readDataBetweenEndMarkers()",
+	                    excelFile.getName() ,
+	                    "not able to read data from cell for sheet -> Domestic in Pl Budget excel",
+	                   " so processing other files, check logs ->  " +e.toString()+  "  " +e.getMessage()
+	                    
+	          )  );
+//System.exit(0);
+	        }   finally {
+	            try {
+	                
+	                if (is != null) is.close();
+	            } catch (Exception ex) {
+	                ex.printStackTrace();
+	            }
+	        }
+
+	        return rowData;
+	    }
+
+	    //   Detect END in first row -> stop columns
+	    private   int findLastColumnBeforeEnd(Row headerRow, FormulaEvaluator evaluator) {
+
+	        int lastCol = headerRow.getLastCellNum();
+
+	        for (int c = 0; c < lastCol; c++) {
+
+	            Object val =  readCellValue(headerRow.getCell(c),evaluator);
+
+	            if (val != null && "END".equalsIgnoreCase(val.toString().trim())) {
+	                return c - 1;
+	            }else {
+	            	   
+	  	           // logger.info("not able to find END marker in column in findLastColumnBeforeEnd() in :: > "+ EndBoundedExcelReader.class.getName());
+	            	  // logger.info("not able to find END marker in column in findLastColumnBeforeEnd() in :: > "+ ResultTransPackingEndBoundedExcelReader.class.getName());
+
+	            }
+	        }
+	        return  -101;
+	    }
+
+	    //   Detect END in first column -> stop rows
+	    private   int findLastRowBeforeEnd(XSSFSheet sheet, FormulaEvaluator evaluator) {
+
+	        int lastRow = sheet.getLastRowNum();
+
+	        for (int r = 0; r <= lastRow; r++) {
+
+	            Row row = sheet.getRow(r);
+	            if (row == null) continue;
+
+	            Object val =  readCellValue(row.getCell(0),evaluator);
+
+	            if (val != null && "END".equalsIgnoreCase(val.toString().trim())) {
+	                return r - 1;
+	            }else {
+	            	   
+	  	           // logger.info("not able to find END marker in row in findLastRowBeforeEnd() in :: > "+ EndBoundedExcelReader.class.getName());
+	            	//  logger.info("not able to find END marker in row in findLastRowBeforeEnd() in :: > "+ ResultTransPackingEndBoundedExcelReader.class.getName());
+
+	            }
+	        }
+	        return -101;
+	    }
+	    /*
+	    public Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	    {
+	        Object cellValue = null;
+
+	        try
+	        {
+	            if (cell == null)
+	                return null;
+
+	            DataFormatter formatter = new DataFormatter();
+
+	            // ================= FORMULA =================
+	            if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	            {
+	                try
+	                {
+	                    CellValue eval = evaluator.evaluate(cell);
+
+	                    if (eval != null)
+	                    {
+	                        switch (eval.getCellType())
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                                double num = eval.getNumberValue();
+	                                cellValue = (long) num;   // 🔥 remove decimal
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = eval.getStringValue();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = eval.getBooleanValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                }
+	                catch (Exception e)
+	                {
+	                    // 🔥 IMPORTANT: fallback when POI fails (IFERROR, XLOOKUP)
+
+	                    switch (cell.getCachedFormulaResultType())
+	                    {
+	                        case Cell.CELL_TYPE_NUMERIC:
+	                            double num = cell.getNumericCellValue();
+	                            cellValue = (long) num;   // 🔥 remove decimal
+	                            break;
+
+	                        case Cell.CELL_TYPE_STRING:
+	                            cellValue = cell.getStringCellValue();
+	                            break;
+
+	                        case Cell.CELL_TYPE_BOOLEAN:
+	                            cellValue = cell.getBooleanCellValue();
+	                            break;
+
+	                        default:
+	                            cellValue = 0;
+	                    }
+	                }
+	            }
+
+	            // ================= NUMERIC =================
+	            else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+	            {
+	                double num = cell.getNumericCellValue();
+	                cellValue = (long) num;   // 🔥 remove decimal
+	            }
+
+	            // ================= STRING =================
+	            else if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+	            {
+	                cellValue = cell.getStringCellValue();
+	            }
+
+	            // ================= CLEANUP =================
+	            if (cellValue != null)
+	            {
+	                String val = cellValue.toString();
+
+	                if (val.contains(",")) val = val.replace(",", "");
+	                if (val.contains("* ")) val = val.replace("* ", "");
+
+	                cellValue = val.trim();
+	            }
+	        }
+	        catch (Exception e)
+	        {
+
+	        	e.printStackTrace();
+	            logger.info("Exception in readCellValue: " + e.toString() + " " + e.getMessage());
+
+	            cellValue = null;
+
+	            GlobalExceptionHandler_AND_EmailSender.handleException(
+	                new PrintLog_AND_SendEmail_Exception(
+	                    "PlBudgetDomesticEndBoundedExcelReader.class",
+	                    "readCellValue()",
+	                    excelFile2.getName(),
+	                    "not able to read data from cell for sheet -> Domestic in Pl Budget excel",
+	                    "so processing other files, check logs -> " + e.toString() + " " + e.getMessage()
+	                )
+	            );
+	        }
+
+	        return cellValue;
+	    }
+	    */
+	   
+	    public Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	    {
+	    	CellValue evaluatedValue =null;
+	        Object cellValue = null;
+
+	        try
+	        {
+	            if (cell == null)
+	                return null;
+
+	            DataFormatter formatter = new DataFormatter();
+
+	            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+	            {
+	                cellValue = formatter.formatCellValue(cell);
+	            }
+	            else if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+	            {
+	                cellValue = cell.getStringCellValue();
+	            }
+	            else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	            {
+	                String formula = cell.getCellFormula();
+
+	                // Try evaluating (works for SUM, IF, etc.)
+	                evaluatedValue = evaluator.evaluate(cell);
+	                try
+	                {
+
+	                    if (evaluatedValue != null)
+	                    {
+	                        switch (evaluatedValue.getCellType())
+	                        {
+	                             case Cell.CELL_TYPE_NUMERIC:
+	                               cellValue = formatter.formatCellValue(cell, evaluator);
+//	                            	 cellValue = String.valueOf(evaluatedValue.getNumberValue());
+//	                            	 System.err.println(cellValue);
+	                                break;
+	                                
+
+//	                        case Cell.CELL_TYPE_NUMERIC:
+//	                            cellValue = evaluatedValue.getNumberValue();
+//	                            break;
+	                            
+	                             
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = evaluatedValue.getStringValue();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = evaluatedValue.getBooleanValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                }
+	                catch (Exception ex)
+	                {
+	                    // POI cannot evaluate (example: XLOOKUP)
+	                    cellValue = null;
+	                }
+
+	                
+//	                 * If evaluator failed (XLOOKUP case),
+//	                 * read cached Excel result
+	                 
+	                if (cellValue == null)
+	                {
+	                    try
+	                    {
+	                        int cachedType = cell.getCachedFormulaResultType();
+
+	                        switch (cachedType)
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+//	                                cellValue = formatter.formatCellValue(cell);
+	                             	 cellValue = String.valueOf(evaluatedValue.getNumberValue());
+	                            	 System.err.println(cellValue);
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = cell.getRichStringCellValue().getString();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = cell.getBooleanCellValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                    catch (IllegalStateException ignore)
+	                    {
+	                        cellValue = null;
+	                    }
+	                }
+
+	                // IFERROR(...,"0") fallback
+	                if (cellValue == null || "".equals(cellValue))
+	                {
+	                    cellValue = "0";
+	                }
+	            }
+
+	            // cleanup formatting
+	            if (cellValue != null)
+	            {
+	                String val = cellValue.toString();
+	                if (val.contains(",")) val = val.replace(",", "");
+	                if (val.contains("* ")) val = val.replace("* ", "");
+	                cellValue = val.trim();
+	            }
+	        }
+	        catch (Exception e)
+	        {
+	        	e.printStackTrace();
+	            logger.info("Exception in readCellValue: " + e.getMessage());
+	            cellValue = null;
+	            GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                    "ResultTransPackingEndBoundedExcelReader.class",
+	                    "readCellValue()",
+	                    excelFile2.getName() ,
+	                    "not able to read data from cell for sheet -> Result Trans Packing",
+	                   " so processing other files, check logs ->  " +e.toString()+  "  " +e.getMessage()
+	                    
+	            ));
+	        }
+
+	        return cellValue;
+	    }
+	    
+	   
+	/*
+	public   Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	{
+		Object cellValue = null;
+		try {
+			if (null != cell) {
+				
+//				  check for Cell Type and format accordingly
+				
+				if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+					
+					// set cell type as String
+//					cell.setCellType(Cell.CELL_TYPE_STRING);
+//					cellValue = cell.getStringCellValue();
+					DataFormatter dmt = new DataFormatter();
+					cellValue = dmt.formatCellValue(cell);
+					if(null!=cellValue && cellValue.toString().contains(","))
+					{
+						cellValue=  cellValue.toString().replace(",", "");
+					}
+					if(null!=cellValue && !"".equals(cellValue))
+					{
+						cellValue = cellValue.toString().replace("* ", "");
+					}
+					dmt = null;
+				}
+				else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+				{
+				    DataFormatter formatter = new DataFormatter();
+
+				    // Evaluate the formula result
+				    CellValue evaluatedValue = evaluator.evaluate(cell);
+
+				    if (evaluatedValue != null)
+				    {
+				        switch (evaluatedValue.getCellType())
+				        {
+				            case Cell.CELL_TYPE_NUMERIC:
+				                cellValue = formatter.formatCellValue(cell, evaluator);
+				                if(null!=cellValue && cellValue.toString().contains(","))
+								{
+									cellValue=  cellValue.toString().replace(",", "");
+								}
+								if(null!=cellValue && !"".equals(cellValue))
+								{
+									cellValue = cellValue.toString().replace("* ", "");
+								}
+				                break;
+
+				            case  Cell.CELL_TYPE_STRING:
+				                cellValue = evaluatedValue.getStringValue();
+				                break;
+
+				            case Cell.CELL_TYPE_BOOLEAN:
+				                cellValue = evaluatedValue.getBooleanValue();
+				                break;
+
+				            case Cell.CELL_TYPE_BLANK:
+				            	 
+				            	
+				                cellValue = null;
+				                break;
+
+				            default:
+				                cellValue = formatter.formatCellValue(cell);
+				        }
+				    }
+				}
+				else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+					cellValue = cell.getStringCellValue();
+				}
+			}
+		} catch (Exception e) {
+			//printStackTraceToLogs(Utilities.class.getName(), "readCellValue()", e);
+	            logger.info("Exception in converting cell value to object in readCellValue (so returning null) in :: > "+ EndBoundedExcelReader.class.getName());
+
+			// set cellValue to null
+			cellValue = null;
+		}
+		if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	    {
+			  DataFormatter formatter = new DataFormatter();
+			   int cachedType = cell.getCachedFormulaResultType();
+			   if(cachedType==Cell.CELL_TYPE_NUMERIC) {
+				   cellValue = formatter.formatCellValue(cell);
+			   }else if(cachedType==Cell.CELL_TYPE_STRING) {
+				   cellValue = cell.getRichStringCellValue().getString();
+			   }else if(cachedType==Cell.CELL_TYPE_BOOLEAN) {
+				   cellValue = cell.getBooleanCellValue();
+			   }else if(Cell.CELL_TYPE_BLANK==cachedType) {
+				   cellValue = null;
+			   }
+			   
+
+			 
+//cellValue = formatter.formatCellValue(cell);
+System.out.println(String.valueOf(  cellValue));
+ 
+	    }
+		return cellValue;
+	
+	
+	
+	
+	}
+	*/
+}
