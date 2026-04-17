@@ -1,0 +1,873 @@
+package com.snak.Services;
+ 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.snak.UserDefiendExceptionHandler$Logging.GlobalExceptionHandler_AND_EmailSender;
+import com.snak.UserDefiendExceptionHandler$Logging.PrintLog_AND_SendEmail_Exception;
+import com.snak.dto.Result_Price; 
+
+@Service
+public class  ResultPriceEndBoundedExcelReader{
+	static Logger logger=LoggerFactory.getLogger(ResultPriceEndBoundedExcelReader.class);
+	Object value =null;
+	int columnIndex=0;
+	@Autowired
+	GlobalExceptionHandler_AND_EmailSender GlobalExceptionHandler_AND_EmailSender;
+	File excelFile2=null;
+	Row row=null;
+	Result_Price Per_Unit_Sales_Price =null;
+	Result_Price Sale_Value =null;
+	List<Result_Price> rowData = new ArrayList<>();
+	 public   List<Result_Price> readDataBetweenEndMarkers(File excelFile) {
+
+
+		 excelFile2=excelFile;
+
+System.err.println(excelFile.getName());
+
+InputStream is=null;
+ XSSFWorkbook workbook=null;
+	        try {
+	        	  is = new FileInputStream(excelFile);
+	               workbook = new XSSFWorkbook(is);
+	          // ⭐ Required to calculate formulas
+	             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+	            XSSFSheet sheet = workbook.getSheet("Result Price");
+	            if (sheet == null) {
+	                GlobalExceptionHandler_AND_EmailSender.handleException(
+	                    new PrintLog_AND_SendEmail_Exception(
+	                        "ResultPriceEndBoundedExcelReader.class",
+	                        "readDataBetweenEndMarkers()",
+	                        excelFile.getName(),
+	                        "'Result Price' sheet not found",
+	                        "Skipping this sheet"
+	                    )
+	                );
+	                return null;   // stop processing this sheet
+	            }
+System.out.println(sheet.getSheetName());
+	            //   Find boundaries
+	            int lastColumn = findLastColumnBeforeEnd(sheet.getRow(0),  evaluator);
+	            int lastRow = findLastRowBeforeEnd(sheet,  evaluator);
+
+	            if(lastColumn==-101 || lastRow==-101) {
+	            	// logger.info("not able to find END marker in column or row in EndBoundedExcelReader() in :: > "+ ResultPriceEndBoundedExcelReader.class.getName());
+	            	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                         "ResultPriceEndBoundedExcelReader.class",
+	                         "readDataBetweenEndMarkers()",
+	                         excelFile.getName(),
+	                         "END marker not found in COLUMN or ROW in Sheet - Result Price",
+	                         "skipping this file and processing others"
+	                         
+	               )  );
+//System.exit(0);
+	            	return null;   // stop processing this sheet
+	            }
+	            //   Read data only inside END-to-END box
+	            for (int r = 1; r <= lastRow; r++) {
+	            	//if END marker not found then already thrown exception so log will be maintained and email will be sent
+	            	//and null, so caller of this method will continue it loop
+	            	 if(lastColumn==-101 || lastRow==-101) {
+	            		 return null;
+		            		// break;
+	            		 
+	            	 }
+	                  row = sheet.getRow(r);
+	                if (row == null) { ; continue ;}
+
+	                Per_Unit_Sales_Price =new Result_Price();
+	                Sale_Value=new Result_Price();
+	                for (int c = 0; c <= lastColumn; c++) {
+
+	                      value =  readCellValue(row.getCell(c),evaluator);
+	                    if(c==0) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setSNO(String.valueOf( value).trim());
+	                    		Sale_Value.setSNO(String.valueOf( value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setSNO("0");
+	                    		Sale_Value.setSNO("0");
+	    					}
+	                    	 
+	                    	 
+	                    }else if(c==1) {
+	                    	
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setFY(String.valueOf( value).trim());
+	                    		Sale_Value.setFY(String.valueOf( value).trim()); 
+	    					}else{
+	    						Per_Unit_Sales_Price.setFY(null);
+	                    		Sale_Value.setFY(null); 	
+	    					}
+	                    	
+	                    	 
+	                    	columnIndex++;
+	                    }else if(c==2) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setDataType(String.valueOf(value).trim());
+	                    		Sale_Value.setDataType(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setDataType(null);
+	                    		Sale_Value.setDataType(null);
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==3) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setCountry(String.valueOf(value).trim());
+	                    		Sale_Value.setCountry(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setCountry(null);
+	                    		Sale_Value.setCountry(null);
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==4) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setFirstHalf(String.valueOf(value).trim());
+	                    		Sale_Value.setFirstHalf(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setFirstHalf(null);
+	                    		Sale_Value.setFirstHalf(null);
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==5) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setSecondHalf(String.valueOf(value).trim());
+	                    		Sale_Value.setSecondHalf(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setSecondHalf(null);
+	                    		Sale_Value.setSecondHalf(null);
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==6) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setModel(String.valueOf(value).trim());
+	                    		Sale_Value.setModel(String.valueOf(value).trim());
+	    					}else {
+
+	    						Per_Unit_Sales_Price.setModel("0");
+	    						Sale_Value.setModel("0");
+	    					}
+	                     	columnIndex++;
+	                    }else if(c==7) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setGroup(String.valueOf(value).trim());
+	                    		Sale_Value.setGroup(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setGroup(null);
+	                    		Sale_Value.setGroup(null);
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==8) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setCategory("Per Unit Sales Price");
+	    					}else {
+	    						Per_Unit_Sales_Price.setCategory("Per Unit Sales Price");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==9) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setApr(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setApr("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==10) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setMay(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setMay("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==11) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setJun(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setJun("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==12) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setJul(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setJul("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==13) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setAug(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setAug("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==14) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setSep(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setSep("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==15) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setOct(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setOct("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==16) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setNov(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setNov("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==17) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setDec(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setDec("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==18) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setJan(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setJan("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==19) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setFeb(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setFeb("0");
+	    					}
+	                    	 columnIndex++;
+	                    }
+	                    else if(c==20) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setMar(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setMar("0");
+	    					}
+	                    	 columnIndex++;
+	                    }
+	                    else if(c==21) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setMonthly(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setMonthly("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==22) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setAvaraged(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setAvaraged("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==23) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Per_Unit_Sales_Price.setLastMonth(String.valueOf(value).trim());
+	    					}else {
+	    						Per_Unit_Sales_Price.setLastMonth("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==24) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setCategory("Sale Value");
+	    					}else {
+	    						Sale_Value.setCategory("Sale Value");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==25) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setApr(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setApr("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==26) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setMay(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setMay("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==27) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setJun(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setJun("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==28) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setJul(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setJul("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==29) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setAug(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setAug("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==30) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setSep(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setSep("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==31) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setOct(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setOct("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==32) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setNov(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setNov("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==33) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setDec(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setDec("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==34) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setJan(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setJan("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==35) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setFeb(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setFeb("0");
+	    					}
+	                    	 columnIndex++;
+	                    }
+	                    else if(c==36) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setMar(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setMar("0");
+	    					}
+	                    	 columnIndex++;
+	                    }
+	                    else if(c==37) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setMonthly(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setMonthly("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==38) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setAvaraged(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setAvaraged("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==39) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		Sale_Value.setLastMonth(String.valueOf(value).trim());
+	    					}else {
+	    						Sale_Value.setLastMonth("0");
+	    					}
+	                    	 columnIndex++;
+	                    }
+	                    }
+	                columnIndex=0;
+	                rowData.add(Per_Unit_Sales_Price == null ? null :Per_Unit_Sales_Price);
+	                rowData.add(Sale_Value == null ? null :Sale_Value);
+ 
+	            }
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	           // logger.info("not able to read data from cell in readDataBetweenEndMarkers()");
+	            GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                    "ResultPriceEndBoundedExcelReader.class",
+	                    "readDataBetweenEndMarkers()",
+	                    excelFile.getName() ,
+	                    "not able to read data from cell for sheet -> Result Price",
+	                   " so processing other files, check logs ->  " +e.toString()+  "  " +e.getMessage()
+	                    
+	         )   );
+//System.exit(0);
+	        }   finally {
+	            try {
+	                
+	                if (is != null) is.close();
+	            } catch (Exception ex) {
+	                ex.printStackTrace();
+	            }
+	        }
+
+	        return rowData;
+	    }
+
+	    //   Detect END in first row -> stop columns
+	    private   int findLastColumnBeforeEnd(Row headerRow, FormulaEvaluator evaluator) {
+//System.out.println( "findLastColumnBeforeEnd()  ");
+	        int lastCol = headerRow.getLastCellNum();
+
+	        for (int c = 0; c < lastCol; c++) {
+
+	            Object val =  readCellValue(headerRow.getCell(c),evaluator);
+
+	            if (val != null && "END".equalsIgnoreCase(val.toString().trim())) {
+	            	System.out.println(val);
+	                return c - 1;
+	            }else {
+//	            	System.err.println(val);
+	  	           // logger.info("not able to find END marker in column in findLastColumnBeforeEnd() in :: > "+ EndBoundedExcelReader.class.getName());
+	            	//logger.info("not able to find END marker in column in findLastColumnBeforeEnd() in :: > "+ ResultPriceEndBoundedExcelReader.class.getName());
+	            }
+	        }
+	        return  -101;
+	    }
+
+	    //   Detect END in first column -> stop rows
+	    private   int findLastRowBeforeEnd(XSSFSheet sheet, FormulaEvaluator evaluator) {
+	    	//System.out.println( "findLastRowBeforeEnd ");
+	        int lastRow = sheet.getLastRowNum();
+
+	        for (int r = 0; r <= lastRow; r++) {
+
+	            Row row = sheet.getRow(r);
+	            if (row == null) continue;
+
+	            Object val =  readCellValue(row.getCell(0),evaluator);
+
+	            if (val != null && "END".equalsIgnoreCase(val.toString().trim())) {
+	            	System.out.println(val);
+	                return r - 1;
+	            }else {
+//	            	System.err.println(val);
+	  	           // logger.info("not able to find END marker in row in findLastRowBeforeEnd() in :: > "+ EndBoundedExcelReader.class.getName());
+	            	   
+	            	//   logger.info("not able to find END marker in row in findLastRowBeforeEnd() in :: > "+ ResultPriceEndBoundedExcelReader.class.getName());
+
+	            }
+	        }
+	        return -101;
+	    }
+	
+	    public Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	    {
+	        Object cellValue = null;
+
+	        try
+	        {
+	            if (cell == null)
+	                return null;
+
+	            DataFormatter formatter = new DataFormatter();
+
+	            // ================= FORMULA =================
+	            if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	            {
+	                try
+	                {
+	                    CellValue eval = evaluator.evaluate(cell);
+
+	                    if (eval != null)
+	                    {
+	                        switch (eval.getCellType())
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                                double num = eval.getNumberValue();
+//	                                cellValue = (long) num;   // 🔥 remove decimal
+	                                cellValue = Math.round(num);  
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = eval.getStringValue();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = eval.getBooleanValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                }
+	                catch (Exception e)
+	                {
+	                    // 🔥 IMPORTANT: fallback when POI fails (IFERROR, XLOOKUP)
+
+	                    switch (cell.getCachedFormulaResultType())
+	                    {
+	                        case Cell.CELL_TYPE_NUMERIC:
+	                            double num = cell.getNumericCellValue();
+//	                            cellValue = (long) num;   // 🔥 remove decimal
+	                            cellValue = Math.round(num);  
+	                            break;
+
+	                        case Cell.CELL_TYPE_STRING:
+	                            cellValue = cell.getStringCellValue();
+	                            break;
+
+	                        case Cell.CELL_TYPE_BOOLEAN:
+	                            cellValue = cell.getBooleanCellValue();
+	                            break;
+
+	                        default:
+	                            cellValue = 0;
+	                    }
+	                }
+	            }
+
+	            // ================= NUMERIC =================
+	            else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+	            {
+	                double num = cell.getNumericCellValue();
+//	                cellValue = (long) num;   // 🔥 remove decimal
+//	                cellValue = Math.round(num);  
+	                /*below will give
+                    125737.99999997  →  "125737.99999997"
+					125738.0         →  "125738"
+                    */
+                    cellValue = BigDecimal.valueOf(num).toPlainString();
+	            }
+
+	            // ================= STRING =================
+	            else if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+	            {
+	                cellValue = cell.getStringCellValue();
+	            }
+
+	            // ================= CLEANUP =================
+	            if (cellValue != null)
+	            {
+	                String val = cellValue.toString();
+
+	                if (val.contains(",")) val = val.replace(",", "");
+	                if (val.contains("* ")) val = val.replace("* ", "");
+
+	                cellValue = val.trim();
+	            }
+	        }
+	        catch (Exception e)
+	        {
+
+	        	e.printStackTrace();
+	            logger.info("Exception in readCellValue: " + e.toString() + " " + e.getMessage());
+
+	            cellValue = null;
+
+	            GlobalExceptionHandler_AND_EmailSender.handleException(
+	                new PrintLog_AND_SendEmail_Exception(
+	                    "ResultPriceEndBoundedExcelReader.class",
+	                    "readCellValue()",
+	                    excelFile2.getName(),
+	                    "not able to read data from cell for sheet -> Result Price",
+	                    "so processing other files, check logs -> " + e.toString() + " " + e.getMessage()
+	                )
+	            );
+	        }
+
+	        return cellValue;
+	    }
+	    
+	    /*
+	    public Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	    {
+	        Object cellValue = null;
+
+	        try
+	        {
+	            if (cell == null)
+	                return null;
+
+	            DataFormatter formatter = new DataFormatter();
+
+	            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+	            {
+	                cellValue = formatter.formatCellValue(cell);
+	            }
+	            else if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+	            {
+	                cellValue = cell.getStringCellValue();
+	            }
+	            else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	            {
+	                String formula = cell.getCellFormula();
+
+	                try
+	                {
+	                    // Try evaluating (works for SUM, IF, etc.)
+	                    CellValue evaluatedValue = evaluator.evaluate(cell);
+
+	                    if (evaluatedValue != null)
+	                    {
+	                        switch (evaluatedValue.getCellType())
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                                cellValue = formatter.formatCellValue(cell, evaluator);
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = evaluatedValue.getStringValue();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = evaluatedValue.getBooleanValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                }
+	                catch (Exception ex)
+	                {
+	                    // POI cannot evaluate (example: XLOOKUP)
+	                    cellValue = null;
+	                }
+
+	              
+//	                 * If evaluator failed (XLOOKUP case),
+//	                 * read cached Excel result
+	                 
+	                if (cellValue == null)
+	                {
+	                    try
+	                    {
+	                        int cachedType = cell.getCachedFormulaResultType();
+
+	                        switch (cachedType)
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                                cellValue = formatter.formatCellValue(cell);
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = cell.getRichStringCellValue().getString();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = cell.getBooleanCellValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                    catch (IllegalStateException ignore)
+	                    {
+	                        cellValue = null;
+	                    }
+	                }
+
+	                // IFERROR(...,"0") fallback
+	                if (cellValue == null || "".equals(cellValue))
+	                {
+	                    cellValue = "0";
+	                }
+	            }
+
+	            // cleanup formatting
+	            if (cellValue != null)
+	            {
+	                String val = cellValue.toString();
+	                if (val.contains(",")) val = val.replace(",", "");
+	                if (val.contains("* ")) val = val.replace("* ", "");
+	                cellValue = val.trim();
+	            }
+	        }
+	        catch (Exception e)
+	        {
+	            logger.info("Exception in readCellValue: " + e.getMessage());
+	            GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                    "ResultPriceEndBoundedExcelReader.class",
+	                    "readCellValue()",
+	                    excelFile2.getName() ,
+	                    "not able to read data from cell for sheet -> Result Price",
+	                   " so processing other files, check logs ->  " +e.toString()+ "  " +e.getMessage()
+	                    
+	           ) );
+	            
+	        } 
+
+	        return cellValue;
+	    }
+	    
+	    */
+	/*
+	public   Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	{
+		Object cellValue = null;
+		try {
+			if (null != cell) {
+				
+//				  check for Cell Type and format accordingly
+				
+				if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+					
+					// set cell type as String
+//					cell.setCellType(Cell.CELL_TYPE_STRING);
+//					cellValue = cell.getStringCellValue();
+					DataFormatter dmt = new DataFormatter();
+					cellValue = dmt.formatCellValue(cell);
+					if(null!=cellValue && cellValue.toString().contains(","))
+					{
+						cellValue=  cellValue.toString().replace(",", "");
+					}
+					if(null!=cellValue && !"".equals(cellValue))
+					{
+						cellValue = cellValue.toString().replace("* ", "");
+					}
+					dmt = null;
+				}
+				else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+				{
+				    DataFormatter formatter = new DataFormatter();
+
+				    // Evaluate the formula result
+				    CellValue evaluatedValue = evaluator.evaluate(cell);
+
+				    if (evaluatedValue != null)
+				    {
+				        switch (evaluatedValue.getCellType())
+				        {
+				            case Cell.CELL_TYPE_NUMERIC:
+				                cellValue = formatter.formatCellValue(cell, evaluator);
+				                if(null!=cellValue && cellValue.toString().contains(","))
+								{
+									cellValue=  cellValue.toString().replace(",", "");
+								}
+								if(null!=cellValue && !"".equals(cellValue))
+								{
+									cellValue = cellValue.toString().replace("* ", "");
+								}
+				                break;
+
+				            case  Cell.CELL_TYPE_STRING:
+				                cellValue = evaluatedValue.getStringValue();
+				                break;
+
+				            case Cell.CELL_TYPE_BOOLEAN:
+				                cellValue = evaluatedValue.getBooleanValue();
+				                break;
+
+				            case Cell.CELL_TYPE_BLANK:
+				            	 
+				            	
+				                cellValue = null;
+				                break;
+
+				            default:
+				                cellValue = formatter.formatCellValue(cell);
+				        }
+				    }
+				}
+				else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+					cellValue = cell.getStringCellValue();
+				}
+			}
+		} catch (Exception e) {
+			//printStackTraceToLogs(Utilities.class.getName(), "readCellValue()", e);
+	            logger.info("Exception in converting cell value to object in readCellValue (so returning null) in :: > "+ EndBoundedExcelReader.class.getName());
+
+			// set cellValue to null
+			cellValue = null;
+		}
+		if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	    {
+			  DataFormatter formatter = new DataFormatter();
+			   int cachedType = cell.getCachedFormulaResultType();
+			   if(cachedType==Cell.CELL_TYPE_NUMERIC) {
+				   cellValue = formatter.formatCellValue(cell);
+			   }else if(cachedType==Cell.CELL_TYPE_STRING) {
+				   cellValue = cell.getRichStringCellValue().getString();
+			   }else if(cachedType==Cell.CELL_TYPE_BOOLEAN) {
+				   cellValue = cell.getBooleanCellValue();
+			   }else if(Cell.CELL_TYPE_BLANK==cachedType) {
+				   cellValue = null;
+			   }
+			   
+
+			 
+//cellValue = formatter.formatCellValue(cell);
+System.out.println(String.valueOf(  cellValue));
+ 
+	    }
+		return cellValue;
+	
+	
+	
+	
+	}
+	*/
+}

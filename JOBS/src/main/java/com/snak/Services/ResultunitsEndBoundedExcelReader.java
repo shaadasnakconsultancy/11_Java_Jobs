@@ -3,6 +3,7 @@ package com.snak.Services;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,7 +96,10 @@ System.out.println(sheet.getSheetName());
 	                    if(c==0) {
 	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
 	    					{
-	                    		Result_Units_DTO.setSno(String.valueOf(value).trim());
+//	                    		Result_Units_DTO.setSno(String.valueOf(value).trim());
+	                    		  BigDecimal bd = new BigDecimal(value.toString().trim());
+	                    		  Result_Units_DTO.setSno(String.valueOf(bd.intValue()));
+
 	    					}else {
 	                    	value = null;
 	    					}
@@ -412,7 +416,13 @@ System.out.println(sheet.getSheetName());
 	                        {
 	                            case Cell.CELL_TYPE_NUMERIC:
 	                                double num = eval.getNumberValue();
-	                                cellValue = (long) num;   // 🔥 remove decimal
+//	                                cellValue = (long) num;   // 🔥 remove decimal
+//	                                cellValue = Math.round(num);
+	                                /*below will give
+	                                125737.99999997  →  "125737.99999997"
+	            					125738.0         →  "125738"
+	                                */
+	                                cellValue = BigDecimal.valueOf(num).toPlainString();
 	                                break;
 
 	                            case Cell.CELL_TYPE_STRING:
@@ -436,7 +446,13 @@ System.out.println(sheet.getSheetName());
 	                    {
 	                        case Cell.CELL_TYPE_NUMERIC:
 	                            double num = cell.getNumericCellValue();
-	                            cellValue = (long) num;   // 🔥 remove decimal
+//                              cellValue = (long) num;   // 🔥 remove decimal
+//                              cellValue = Math.round(num);  
+	                            /*below will give
+	                            125737.99999997  →  "125737.99999997"
+	        					125738.0         →  "125738"
+	                            */
+	                            cellValue = BigDecimal.valueOf(num).toPlainString();
 	                            break;
 
 	                        case Cell.CELL_TYPE_STRING:
@@ -457,7 +473,13 @@ System.out.println(sheet.getSheetName());
 	            else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
 	            {
 	                double num = cell.getNumericCellValue();
-	                cellValue = (long) num;   // 🔥 remove decimal
+//                  cellValue = (long) num;   // 🔥 remove decimal
+//                  cellValue = Math.round(num);  
+	                /*below will give
+                    125737.99999997  →  "125737.99999997"
+					125738.0         →  "125738"
+                    */
+                    cellValue = BigDecimal.valueOf(num).toPlainString();
 	            }
 
 	            // ================= STRING =================

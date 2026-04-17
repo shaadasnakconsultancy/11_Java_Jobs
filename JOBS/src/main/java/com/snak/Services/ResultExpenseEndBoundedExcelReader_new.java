@@ -3,6 +3,7 @@ package com.snak.Services;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,8 +47,7 @@ public class  ResultExpenseEndBoundedExcelReader_new{
 	 public   List<Result_Expense> readDataBetweenEndMarkers(File excelFile) {
 String completed=null;
          String currentBatchId=applicationPropertiesService.getProperty("job.batch.id");
-         
-		 int sheetIterator=1;
+         int sheetIterator=1;
 		 List<Result_Expense> rowData = new ArrayList<>();
 			Result_Expense rebate = new Result_Expense();
 			Result_Expense marketing = new Result_Expense();
@@ -212,13 +212,19 @@ if (!isFullFormat && !isShortFormat) {
     			  homol = new Result_Expense();
     			  insuranceRecovery = new Result_Expense();
     			  FreightRecovery = new Result_Expense();
-    			  scrapExpCroTrade = new Result_Expense();
-    			  possitiveScraExp = new Result_Expense();
+    			  scrapExpCroTrade = new Result_Expense(); 
 
     				 	OverseasServiceMannual= new Result_Expense();
     				  	WhRentCrossTrade= new Result_Expense();
     	        		directTestRideClaim= new Result_Expense();
              
+    	        		  
+    	    			  genAdmin =new Result_Expense();
+    	    			  incentive = new Result_Expense();
+    	    			  directRebate = new Result_Expense();
+    	    			  hsrp = new Result_Expense();
+    	    		   possitiveScraExp = new Result_Expense();
+    	        		
 	                
 	                for (int c = 0; c <= lastColumn; c++) {
 
@@ -1282,8 +1288,7 @@ if (!isFullFormat && !isShortFormat) {
 	                
 
 	            
-	             
-//System.out.println(rebate.toString());
+	             //System.out.println(rebate.toString());
                  rowData.add(rebate == null ? null :rebate);
                  rowData.add(marketing == null ? null :marketing);
                  rowData.add(warranty == null ? null :warranty);
@@ -1291,7 +1296,6 @@ if (!isFullFormat && !isShortFormat) {
                  rowData.add(genAdmin == null ? null :genAdmin);
                  rowData.add(incentive == null ? null :incentive);
                  rowData.add(directRebate == null ? null :directRebate);
-             
                  rowData.add(hsrp == null ? null :hsrp);
                  rowData.add(salary == null ? null :salary);
                  rowData.add(homol == null ? null :homol);
@@ -1299,6 +1303,15 @@ if (!isFullFormat && !isShortFormat) {
                  rowData.add(FreightRecovery == null ? null :FreightRecovery);
                  rowData.add(scrapExpCroTrade == null ? null :scrapExpCroTrade);
                  rowData.add(possitiveScraExp == null ? null :possitiveScraExp);
+                 rowData.add(OverseasServiceMannual == null ? null :OverseasServiceMannual);
+                 rowData.add(WhRentCrossTrade == null ? null :WhRentCrossTrade);
+                 rowData.add(directTestRideClaim == null ? null :directTestRideClaim);
+              
+                 
+                 
+                 
+                 
+                 
 //                 rowData.stream().forEach(a->System.err.println(a));
 	            }//row iteration end
 	          
@@ -1450,7 +1463,14 @@ try {
 	                        {
 	                            case Cell.CELL_TYPE_NUMERIC:
 	                                double num = eval.getNumberValue();
-	                                cellValue = (long) num;   // 🔥 remove decimal
+//	                              cellValue = (long) num;   // 🔥 remove decimal
+//	                                cellValue = Math.round(num);
+	                                
+	                                /*below will give
+	                                125737.99999997  →  "125737.99999997"
+									125738.0         →  "125738"
+	                                */
+	                                cellValue = BigDecimal.valueOf(num).toPlainString();
 	                                break;
 
 	                            case Cell.CELL_TYPE_STRING:
@@ -1474,7 +1494,14 @@ try {
 	                    {
 	                        case Cell.CELL_TYPE_NUMERIC:
 	                            double num = cell.getNumericCellValue();
-	                            cellValue = (long) num;   // 🔥 remove decimal
+//	                          cellValue = (long) num;   // 🔥 remove decimal
+//	                            cellValue = Math.round(num);  
+
+                                /*below will give
+                                125737.99999997  →  "125737.99999997"
+								125738.0         →  "125738"
+                                */
+                                cellValue = BigDecimal.valueOf(num).toPlainString();
 	                            break;
 
 	                        case Cell.CELL_TYPE_STRING:
@@ -1495,7 +1522,14 @@ try {
 	            else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
 	            {
 	                double num = cell.getNumericCellValue();
-	                cellValue = (long) num;   // 🔥 remove decimal
+//                  cellValue = (long) num;   // 🔥 remove decimal
+//                  cellValue = Math.round(num);  
+
+                    /*below will give
+                    125737.99999997  →  "125737.99999997"
+					125738.0         →  "125738"
+                    */
+                    cellValue = BigDecimal.valueOf(num).toPlainString();
 	            }
 
 	            // ================= STRING =================

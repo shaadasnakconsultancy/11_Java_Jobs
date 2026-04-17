@@ -161,7 +161,7 @@ public class MainBootClass implements CommandLineRunner{
         	applicationPropertiesService.setProperty("logs.present","no.logs.areNot.present");
         	applicationPropertiesService.setProperty("logs.message","");	
            
-
+ 
 
         	//1111111111.running "ResultUnitsApplication JOB"
         	ResultUnitsApplication.run();
@@ -213,6 +213,8 @@ public class MainBootClass implements CommandLineRunner{
         	}//22222222222.running "ResultPartsApplication JOB" END
         	  System.gc();
       
+      
+     
         	//3333333333333.running "ResultPriceApplication JOB"
         	ResultPriceApplication.run();
         			//check if .properties have logs.
@@ -316,7 +318,7 @@ public class MainBootClass implements CommandLineRunner{
         	}//6666666666666666.running "ResultDepApplication JOB" END    
         	  System.gc();
 
-      	  
+      	 
    	 
 /*
         	//77777777777777.running "ResultExpenseApplication JOB" ->>>>>>>>>>>>>>>>>old dont use
@@ -343,7 +345,7 @@ public class MainBootClass implements CommandLineRunner{
         	  System.gc();
 */    
     
-
+ 
   
         	//888888888888.running "ResultProAssApplication JOB"
         	ResultProAssApplication.run();
@@ -481,7 +483,7 @@ public class MainBootClass implements CommandLineRunner{
     
         	}//11.running "        	  FundFlowApplication JOB" END
         	  System.gc();
-        	
+        	 
         	      	  
       	  //maintaing log for all jobs in one .txt file, if log in in string "allLogMessageForMaintainingInTXTFile" means log in their in any of the jobs
        	  //so adding html type table of job status in txt along with log, and if log is not their in any then adding html type table with only job status from excel job tracker 
