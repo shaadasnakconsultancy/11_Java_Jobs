@@ -1,0 +1,1816 @@
+package com.snak.Services;
+ 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.snak.Repository.Excel_Job_Tracker_TableInDB_Updater;
+import com.snak.Repository.ResultExpense_repository;
+import com.snak.UserDefiendExceptionHandler$Logging.GlobalExceptionHandler_AND_EmailSender;
+import com.snak.UserDefiendExceptionHandler$Logging.PrintLog_AND_SendEmail_Exception;
+import com.snak.dto.Result_Expense; 
+
+@Service
+public class  ResultExpenseEndBoundedExcelReader_new{
+	static Logger logger=LoggerFactory.getLogger(ResultExpenseEndBoundedExcelReader_new.class);
+	Object value =null;
+	int columnIndex=0;
+	
+	@Autowired
+	GlobalExceptionHandler_AND_EmailSender GlobalExceptionHandler_AND_EmailSender;
+	File excelFile2=null;
+	Row row=null;
+	@Autowired
+	applicationPropertiesService applicationPropertiesService;
+	
+	@Autowired
+	Excel_Job_Tracker_TableInDB_Updater Excel_Job_Tracker_TableInDB_Updater;
+	@Autowired
+	ResultExpense_repository 	ResultExpense_repository;
+	
+	 public   List<Result_Expense> readDataBetweenEndMarkers(File excelFile) {
+String completed=null;
+         String currentBatchId=applicationPropertiesService.getProperty("job.batch.id");
+         int sheetIterator=1;
+		 List<Result_Expense> rowData = new ArrayList<>();
+			Result_Expense rebate = new Result_Expense();
+			Result_Expense marketing = new Result_Expense();
+			Result_Expense warranty = new Result_Expense();
+			Result_Expense salesDep = new Result_Expense();
+			Result_Expense genAdmin =new Result_Expense();
+			Result_Expense incentive = new Result_Expense();
+			Result_Expense directRebate = new Result_Expense();
+			Result_Expense hsrp = new Result_Expense();
+			Result_Expense salary = new Result_Expense();
+			Result_Expense homol = new Result_Expense();
+			Result_Expense insuranceRecovery = new Result_Expense();
+			Result_Expense FreightRecovery = new Result_Expense();
+			Result_Expense scrapExpCroTrade = new Result_Expense();
+			Result_Expense		OverseasServiceMannual= new Result_Expense();
+			Result_Expense   	WhRentCrossTrade= new Result_Expense();
+        	Result_Expense    	directTestRideClaim= new Result_Expense();
+			Result_Expense possitiveScraExp = new Result_Expense();
+int temp=1;
+String monthlyValue=null;
+		 InputStream is=null;
+		 XSSFWorkbook workbook=null;
+	        try {
+
+	        	excelFile2=excelFile;
+	        	  is = new FileInputStream(excelFile);
+	               workbook = new XSSFWorkbook(is);
+	          // ⭐ Required to calculate formulas
+	             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+//	             evaluator.evaluateAll();
+	            //XSSFSheet sheet = workbook.getSheet("Result EX");
+	            
+	              
+	             
+	             
+	             //iterating all monthly sheets of result expense
+	             List<String> validMonths = Arrays.asList(
+	            		    "Apr","May","Jun","Jul","Aug","Sep",
+	            		    "Oct","Nov","Dec","Jan","Feb","Mar"
+	            		);
+	             
+	             
+	             //starting sheet iterator
+	             sheetIterator:
+	             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+
+	            	    XSSFSheet sheet = workbook.getSheetAt(i);
+	                    if (sheet == null) {
+	    	                GlobalExceptionHandler_AND_EmailSender.handleException(
+	    	                    new PrintLog_AND_SendEmail_Exception(
+	    	                        "ResultExpenseEndBoundedExcelReader_new.class",
+	    	                        "readDataBetweenEndMarkers()",
+	    	                        excelFile.getName(),
+	    	                        "no monthly sheet avilable while running 'Result EX' JOB",
+	    	                        "Skipping this excel file"
+	    	                    )
+	    	                );
+	    	                return null;   // stop processing this excel file
+	    	            }
+	            	
+	            	    
+	            	    
+	            	    
+	            	    String sheetName = sheet.getSheetName().trim();
+
+System.out.println(sheet.getSheetName());
+	            	    // Match pattern like Apr'23, Jan'24 etc.
+//boolean isFullFormat = sheetName.matches("^[A-Za-z]{3}'\\d{2}$");
+boolean isFullFormat = sheetName.matches("^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'\\d{2}$");
+if (sheetName != null && sheetName.length() >= 3) {
+	sheetName = sheetName.substring(0, 3);// Apr
+}
+boolean isShortFormat = validMonths.contains(sheetName);
+if (!isFullFormat && !isShortFormat) {
+	            	    	  
+
+	            	    	  //if in excel their is only 1 sheet and sheet name is not in formate like 'apr' or apr'25 then returning null
+	            	    	  //so that excel job tracker will be maintained as failed for that excel file
+	
+	// and if their is more sheet than 1, then not maintainting any log by calling GlobalExceptionHandler_AND_EmailSender.handleException()
+//	method, in this case only continueting iteration of sheets
+	            	    	  
+						if(workbook.getNumberOfSheets()==1) {
+	            	    		  GlobalExceptionHandler_AND_EmailSender.handleException(
+	  	          	                    new PrintLog_AND_SendEmail_Exception(
+	  	          	                        "ResultExpenseEndBoundedExcelReader_new.class",
+	  	          	                        "readDataBetweenEndMarkers()",
+	  	          	                        excelFile.getName(),
+	  	          	                        "'Result Expense' excel file have sheet '"+sheetName+"' , Expected formats: Apr'25 OR Apr",
+	  	          	                        "and also no other sheets except this format should be their, although other sheet will not be processed and these fault sheet will be ignored"
+	  	          	                    )
+	  	          	                );
+	            	    		  System.out.println("return null");
+	            	    		  return null;
+	            	    	  }
+						System.out.println("continue loop");
+	          	                continue sheetIterator;   // continueing to other month sheets
+	            	    	
+	            	    }//END Match pattern like Apr'23, Jan'24 etc.
+
+	            	    
+
+	            	        System.err.println("->>>>>>Processing Sheet that have Apr'24 or Apr " + sheetName);
+
+	            	        // Extract Month & Year
+	            	        if (sheetName != null && sheetName.length() >= 3) {
+	            	            monthlyValue = sheetName.substring(0, 3);// Apr
+	            	        }
+//	            	        if (sheetName.length() > 3) {
+	            	        //String year = sheetName.substring(4);       // 23
+//	             }
+	             
+	             
+	             
+	             
+	             
+	    
+	            //   Find boundaries
+	            int lastColumn = findLastColumnBeforeEnd(sheet.getRow(0),  evaluator);
+	            int lastRow = findLastRowBeforeEnd(sheet,  evaluator);
+
+	            System.err.println(lastColumn);
+	            System.err.println(lastRow);
+	            
+	            if(lastColumn== -101 || lastRow== -101) {
+	            	System.err.println("if(lastColumn==0101 || lastRow==0101) {");	
+	             //    	logger.info("not able to find END marker in column or row in ResultTransPackingEndBoundedExcelReader() in :: > "+ ResultPartsEndBoundedExcelReader.class.getName());
+	            	GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                         "ResultExpenseEndBoundedExcelReader_new.class",
+	                         "readDataBetweenEndMarkers()",
+	                         excelFile.getName(),
+	                         "END marker not found in COLUMN or ROW in Sheet - Result EX",
+	                         "skipping this file and processing others"
+	                         
+	              )   
+	            			
+	            			);
+	            	return null;   // stop processing this sheet
+//System.exit(0);
+	            }
+	            //   Read data only inside END-to-END box
+	            for (int r = 1; r <= lastRow; r++) {
+	            	 
+	            	
+	            	
+	            	//if END marker not found then already thrown exception so log will be maintained and email will be sent
+	            	//and null, so caller of this method will continue it loop
+	            	 if(lastColumn==-101 || lastRow==-101 ) {
+	            		 return null;
+		            		// break;
+	            		 
+	            	 }
+	            	 
+	                  row = sheet.getRow(r);
+	                if (row == null) { ; continue ;}
+
+	           	  rebate = new Result_Expense();
+    			  marketing = new Result_Expense();
+    			  warranty = new Result_Expense();
+    			  salesDep = new Result_Expense();
+    			 
+    			  salary = new Result_Expense();
+    			  homol = new Result_Expense();
+    			  insuranceRecovery = new Result_Expense();
+    			  FreightRecovery = new Result_Expense();
+    			  scrapExpCroTrade = new Result_Expense(); 
+
+    				 	OverseasServiceMannual= new Result_Expense();
+    				  	WhRentCrossTrade= new Result_Expense();
+    	        		directTestRideClaim= new Result_Expense();
+             
+    	        		  
+    	    			  genAdmin =new Result_Expense();
+    	    			  incentive = new Result_Expense();
+    	    			  directRebate = new Result_Expense();
+    	    			  hsrp = new Result_Expense();
+    	    		   possitiveScraExp = new Result_Expense();
+    	        		
+	                
+	                for (int c = 0; c <= lastColumn; c++) {
+
+	                      value =  readCellValue(row.getCell(c),evaluator);
+	                     // System.err.println("-> "+value);
+	                    if(c==0) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		//System.out.println("sssssssssssssssssssssssssssssssnnnnnnnnnnnnnnnnnnnnnnnooooooooooooooooooo");
+	                    		// System.err.println("->-> "+value);
+	                    		rebate.setSno(String.valueOf( value).trim());
+	                    		marketing.setSno(String.valueOf( value).trim());
+	                    		warranty.setSno(String.valueOf( value).trim());
+	                    		salesDep.setSno(String.valueOf( value).trim());
+	                    		genAdmin.setSno(String.valueOf( value).trim());
+	                    		incentive.setSno(String.valueOf( value).trim());
+	                    		directRebate.setSno(String.valueOf( value).trim());
+	                    		  hsrp .setSno(String.valueOf( value).trim());
+	          	                salary .setSno(String.valueOf( value).trim());
+	          	                homol .setSno(String.valueOf( value).trim());
+	          	                insuranceRecovery .setSno(String.valueOf( value).trim());
+	          	                FreightRecovery .setSno(String.valueOf( value).trim());
+	          	                scrapExpCroTrade.setSno(String.valueOf( value).trim());
+	          	                possitiveScraExp .setSno(String.valueOf( value).trim());
+
+	        				 	OverseasServiceMannual.setSno(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setSno(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setSno(String.valueOf( value).trim());
+	                 
+	    	                
+	                    		
+	                    		
+	    					}else {
+	    						rebate.setSno("0");
+	    						marketing.setSno("0");
+	    						warranty.setSno("0");
+	    						salesDep.setSno("0");
+	    						genAdmin.setSno("0");
+	    						incentive.setSno("0");
+	    						directRebate.setSno("0");
+	    						hsrp.setSno("0");
+	    						salary.setSno("0");
+	    						homol.setSno("0");
+	    						insuranceRecovery.setSno("0");
+	    						FreightRecovery.setSno("0");
+	    						scrapExpCroTrade.setSno("0");
+	    						possitiveScraExp.setSno("0");
+
+	        				 	OverseasServiceMannual.setSno("0");
+	        				  	WhRentCrossTrade.setSno("0");
+	        	        		directTestRideClaim.setSno("0");
+	    						
+	    				 	}
+	                    	 
+	                    	 
+	                    }else if(c==1) {
+	                    	
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setFy(String.valueOf(value).trim());
+	                    		marketing.setFy(String.valueOf(value).trim());
+	                    		warranty.setFy(String.valueOf(value).trim());
+	                    		salesDep.setFy(String.valueOf(value).trim());
+	                    		genAdmin.setFy(String.valueOf(value).trim());
+	                    		incentive.setFy(String.valueOf(value).trim());
+	                    		directRebate.setFy(String.valueOf(value).trim());
+	                    		hsrp.setFy(String.valueOf(value).trim());
+	                    		salary.setFy(String.valueOf(value).trim());
+	                    		homol.setFy(String.valueOf(value).trim());
+	                    		insuranceRecovery.setFy(String.valueOf(value).trim());
+	                    		FreightRecovery.setFy(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setFy(String.valueOf(value).trim());
+	                    		possitiveScraExp.setFy(String.valueOf(value).trim());
+	                    		
+
+	        				 	OverseasServiceMannual.setFy(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setFy(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setFy(String.valueOf( value).trim());
+	                    		
+	                     	}else {
+	    						rebate.setFy("");
+	    						marketing.setFy("");
+	    						warranty.setFy("");
+	    						salesDep.setFy("");
+	    						genAdmin.setFy("");
+	    						incentive.setFy("");
+	    						directRebate.setFy("");
+	    						hsrp.setFy("");
+	    						salary.setFy("");
+	    						homol.setFy("");
+	    						insuranceRecovery.setFy("");
+	    						FreightRecovery.setFy("");
+	    						scrapExpCroTrade.setFy("");
+	    						possitiveScraExp.setFy("");
+	    						
+	    						OverseasServiceMannual.setFy("");
+	        				  	WhRentCrossTrade.setFy("");
+	        	        		directTestRideClaim.setFy("");
+	                    		
+	    						
+	    				 	}
+	                    	
+	                    	 
+	                    	columnIndex++;
+	                    }else if(c==2) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setDataType(String.valueOf(value).trim());
+	                    		marketing.setDataType(String.valueOf(value).trim());
+	                    		warranty.setDataType(String.valueOf(value).trim());
+	                    		salesDep.setDataType(String.valueOf(value).trim());
+	                    		genAdmin.setDataType(String.valueOf(value).trim());
+	                    		incentive.setDataType(String.valueOf(value).trim());
+	                    		directRebate.setDataType(String.valueOf(value).trim());
+	                    		hsrp.setDataType(String.valueOf(value).trim());
+	                    		salary.setDataType(String.valueOf(value).trim());
+	                    		homol.setDataType(String.valueOf(value).trim());
+	                    		insuranceRecovery.setDataType(String.valueOf(value).trim());
+	                    		FreightRecovery.setDataType(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setDataType(String.valueOf(value).trim());
+	                    		possitiveScraExp.setDataType(String.valueOf(value).trim());
+	                    		
+	                    		
+
+	    						OverseasServiceMannual.setDataType(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setDataType(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setDataType(String.valueOf( value).trim());
+	                     	}else {
+	    						rebate.setDataType("");
+	    						marketing.setDataType("");
+	    						warranty.setDataType("");
+	    						salesDep.setDataType("");
+	    						genAdmin.setDataType("");
+	    						incentive.setDataType("");
+	    						directRebate.setDataType("");
+	    						hsrp.setDataType("");
+	    						salary.setDataType("");
+	    						homol.setDataType("");
+	    						insuranceRecovery.setDataType("");
+	    						FreightRecovery.setDataType("");
+	    						scrapExpCroTrade.setDataType("");
+	    						possitiveScraExp.setDataType("");
+	    						
+	    						
+	    						OverseasServiceMannual.setDataType("");
+	        				  	WhRentCrossTrade.setDataType("");
+	        	        		directTestRideClaim.setDataType("");
+	                    		
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==3) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setMonthName(String.valueOf(value).trim());
+	                    		marketing.setMonthName(String.valueOf(value).trim());
+	                    		warranty.setMonthName(String.valueOf(value).trim());
+	                    		salesDep.setMonthName(String.valueOf(value).trim());
+	                    		genAdmin.setMonthName(String.valueOf(value).trim());
+	                    		incentive.setMonthName(String.valueOf(value).trim());
+	                    		directRebate.setMonthName(String.valueOf(value).trim());
+	                    		hsrp.setMonthName(String.valueOf(value).trim());
+	                    		salary.setMonthName(String.valueOf(value).trim());
+	                    		homol.setMonthName(String.valueOf(value).trim());
+	                    		insuranceRecovery.setMonthName(String.valueOf(value).trim());
+	                    		FreightRecovery.setMonthName(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setMonthName(String.valueOf(value).trim());
+	                    		possitiveScraExp.setMonthName(String.valueOf(value).trim());
+	                    		
+
+	    						OverseasServiceMannual.setMonthName(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setMonthName(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setMonthName(String.valueOf( value).trim());
+
+	                     }else { 
+	                  		rebate.setMonthName("");
+                    		marketing.setMonthName("");
+                    		warranty.setMonthName("");
+                    		salesDep.setMonthName("");
+                    		genAdmin.setMonthName("");
+                    		incentive.setMonthName("");
+                    		directRebate.setMonthName("");
+                    		hsrp.setMonthName("");
+                    		salary.setMonthName("");
+                    		homol.setMonthName("");
+                    		insuranceRecovery.setMonthName("");
+                    		FreightRecovery.setMonthName("");
+                    		scrapExpCroTrade.setMonthName("");
+                    		possitiveScraExp.setMonthName("");
+                    		
+                    		
+
+    						OverseasServiceMannual.setMonthName("");
+        				  	WhRentCrossTrade.setMonthName("");
+        	        		directTestRideClaim.setMonthName("");
+	    				 }
+	                    	 columnIndex++;
+	                    }else if(c==4) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setModel(String.valueOf(value).trim());
+	                    		marketing.setModel(String.valueOf(value).trim());
+	                    		warranty.setModel(String.valueOf(value).trim());
+	                    		salesDep.setModel(String.valueOf(value).trim());
+	                    		genAdmin.setModel(String.valueOf(value).trim());
+	                    		incentive.setModel(String.valueOf(value).trim());
+	                    		directRebate.setModel(String.valueOf(value).trim());
+	                    		hsrp.setModel(String.valueOf(value).trim());
+	                    		salary.setModel(String.valueOf(value).trim());
+	                    		homol.setModel(String.valueOf(value).trim());
+	                    		insuranceRecovery.setModel(String.valueOf(value).trim());
+	                    		FreightRecovery.setModel(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setModel(String.valueOf(value).trim());
+	                    		possitiveScraExp.setModel(String.valueOf(value).trim());
+	                    		
+	                    		
+
+	    						OverseasServiceMannual.setModel(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setModel(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setModel(String.valueOf( value).trim());
+	                    		
+	                     }else {
+	                    	 rebate.setModel("0");
+	                    	 marketing.setModel("0");
+	                    	 warranty.setModel("0");
+	                    	 salesDep.setModel("0");
+	                    	 genAdmin.setModel("0");
+	                    	 incentive.setModel("0");
+	                    	 directRebate.setModel("0");
+	                    	 hsrp.setModel("0");
+	                    	 salary.setModel("0");
+	                    	 homol.setModel("0");
+	                    	 insuranceRecovery.setModel("0");
+	                    	 FreightRecovery.setModel("0");
+	                    	 scrapExpCroTrade.setModel("0");
+	                    	 possitiveScraExp.setModel("0");
+	                    	 
+	                    	 
+
+	    						OverseasServiceMannual.setModel("0");
+	        				  	WhRentCrossTrade.setModel("0");
+	        	        		directTestRideClaim.setModel("0");
+	                    	 
+	                  }
+	                    	 columnIndex++;
+	                    }else if(c==5) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setCountry(String.valueOf(value).trim());
+	                    		marketing.setCountry(String.valueOf(value).trim());
+	                    		warranty.setCountry(String.valueOf(value).trim());
+	                    		salesDep.setCountry(String.valueOf(value).trim());
+	                    		genAdmin.setCountry(String.valueOf(value).trim());
+	                    		incentive.setCountry(String.valueOf(value).trim());
+	                    		directRebate.setCountry(String.valueOf(value).trim());
+	                    		hsrp.setCountry(String.valueOf(value).trim());
+	                    		salary.setCountry(String.valueOf(value).trim());
+	                    		homol.setCountry(String.valueOf(value).trim());
+	                    		insuranceRecovery.setCountry(String.valueOf(value).trim());
+	                    		FreightRecovery.setCountry(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setCountry(String.valueOf(value).trim());
+	                    		possitiveScraExp.setCountry(String.valueOf(value).trim());
+	                    		
+	                    		OverseasServiceMannual.setCountry(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setCountry(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setCountry(String.valueOf( value).trim());
+	                    		
+	    					}else {
+	    						rebate.setCountry("");
+	    						marketing.setCountry("");
+	    						warranty.setCountry("");
+	    						salesDep.setCountry("");
+	    						genAdmin.setCountry("");
+	    						incentive.setCountry("");
+	    						directRebate.setCountry("");
+	    						hsrp.setCountry("");
+	    						salary.setCountry("");
+	    						homol.setCountry("");
+	    						insuranceRecovery.setCountry("");
+	    						FreightRecovery.setCountry("");
+	    						scrapExpCroTrade.setCountry("");
+	    						possitiveScraExp.setCountry("");
+	    						
+	    						OverseasServiceMannual.setCountry("");
+	        				  	WhRentCrossTrade.setCountry("");
+	        	        		directTestRideClaim.setCountry("");
+	    						
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==6) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setFirstHalf(String.valueOf(value).trim());
+	                    		marketing.setFirstHalf(String.valueOf(value).trim());
+	                    		warranty.setFirstHalf(String.valueOf(value).trim());
+	                    		salesDep.setFirstHalf(String.valueOf(value).trim());
+	                    		genAdmin.setFirstHalf(String.valueOf(value).trim());
+	                    		incentive.setFirstHalf(String.valueOf(value).trim());
+	                    		directRebate.setFirstHalf(String.valueOf(value).trim());
+	                    		hsrp.setFirstHalf(String.valueOf(value).trim());
+	                    		salary.setFirstHalf(String.valueOf(value).trim());
+	                    		homol.setFirstHalf(String.valueOf(value).trim());
+	                    		insuranceRecovery.setFirstHalf(String.valueOf(value).trim());
+	                    		FreightRecovery.setFirstHalf(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setFirstHalf(String.valueOf(value).trim());
+	                    		possitiveScraExp.setFirstHalf(String.valueOf(value).trim());
+	                    
+	                    		
+	                    		OverseasServiceMannual.setFirstHalf(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setFirstHalf(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setFirstHalf(String.valueOf( value).trim());
+	                    		
+	                    		
+	    					}else {
+	    					   	 rebate.setFirstHalf("");
+		                    	 marketing.setFirstHalf("");
+		                    	 warranty.setFirstHalf("");
+		                    	 salesDep.setFirstHalf("");
+		                    	 genAdmin.setFirstHalf("");
+		                    	 incentive.setFirstHalf("");
+		                    	 directRebate.setFirstHalf("");
+		                    	 hsrp.setFirstHalf("");
+		                    	 salary.setFirstHalf("");
+		                    	 homol.setFirstHalf("");
+		                    	 insuranceRecovery.setFirstHalf("");
+		                    	 FreightRecovery.setFirstHalf("");
+		                    	 scrapExpCroTrade.setFirstHalf("");
+		                    	 possitiveScraExp.setFirstHalf("");
+		                    	
+		                    	 
+		                    	 OverseasServiceMannual.setFirstHalf("");
+		        				  	WhRentCrossTrade.setFirstHalf("");
+		        	        		directTestRideClaim.setFirstHalf("");
+	    					}
+	                     	columnIndex++;
+	                    }else if(c==7) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setSecondHalf(String.valueOf(value).trim());
+	                    		marketing.setSecondHalf(String.valueOf(value).trim());
+	                    		warranty.setSecondHalf(String.valueOf(value).trim());
+	                    		salesDep.setSecondHalf(String.valueOf(value).trim());
+	                    		genAdmin.setSecondHalf(String.valueOf(value).trim());
+	                    		incentive.setSecondHalf(String.valueOf(value).trim());
+	                    		directRebate.setSecondHalf(String.valueOf(value).trim());
+	                    		hsrp.setSecondHalf(String.valueOf(value).trim());
+	                    		salary.setSecondHalf(String.valueOf(value).trim());
+	                    		homol.setSecondHalf(String.valueOf(value).trim());
+	                    		insuranceRecovery.setSecondHalf(String.valueOf(value).trim());
+	                    		FreightRecovery.setSecondHalf(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setSecondHalf(String.valueOf(value).trim());
+	                    		possitiveScraExp.setSecondHalf(String.valueOf(value).trim());
+	    					
+	                    		OverseasServiceMannual.setSecondHalf(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setSecondHalf(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setSecondHalf(String.valueOf( value).trim());
+	                    		
+	                    		
+	    					}else {
+	    						rebate.setSecondHalf("");
+	    						marketing.setSecondHalf("");
+	    						warranty.setSecondHalf("");
+	    						salesDep.setSecondHalf("");
+	    						genAdmin.setSecondHalf("");
+	    						incentive.setSecondHalf("");
+	    						directRebate.setSecondHalf("");
+	    						hsrp.setSecondHalf("");
+	    						salary.setSecondHalf("");
+	    						homol.setSecondHalf("");
+	    						insuranceRecovery.setSecondHalf("");
+	    						FreightRecovery.setSecondHalf("");
+	    						scrapExpCroTrade.setSecondHalf("");
+	    						possitiveScraExp.setSecondHalf("");
+	    						
+	    						
+	    						OverseasServiceMannual.setSecondHalf("");
+	        				  	WhRentCrossTrade.setSecondHalf("");
+	        	        		directTestRideClaim.setSecondHalf("");
+	    				}
+	                    	 columnIndex++;
+	                    }else if(c==8) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setModelDiscription(String.valueOf(value).trim());
+	                    		marketing.setModelDiscription(String.valueOf(value).trim());
+	                    		warranty.setModelDiscription(String.valueOf(value).trim());
+	                    		salesDep.setModelDiscription(String.valueOf(value).trim());
+	                    		genAdmin.setModelDiscription(String.valueOf(value).trim());
+	                    		incentive.setModelDiscription(String.valueOf(value).trim());
+	                    		directRebate.setModelDiscription(String.valueOf(value).trim());
+	                    		hsrp.setModelDiscription(String.valueOf(value).trim());
+	                    		salary.setModelDiscription(String.valueOf(value).trim());
+	                    		homol.setModelDiscription(String.valueOf(value).trim());
+	                    		insuranceRecovery.setModelDiscription(String.valueOf(value).trim());
+	                    		FreightRecovery.setModelDiscription(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setModelDiscription(String.valueOf(value).trim());
+	                    		possitiveScraExp.setModelDiscription(String.valueOf(value).trim());
+	    					
+	                    		
+	                    		OverseasServiceMannual.setModelDiscription(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setModelDiscription(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setModelDiscription(String.valueOf( value).trim());
+	                    		
+	                    		
+	    					}else {
+	    						rebate.setModelDiscription("0");
+	    						marketing.setModelDiscription("0");
+	    						warranty.setModelDiscription("0");
+	    						salesDep.setModelDiscription("0");
+	    						genAdmin.setModelDiscription("0");
+	    						incentive.setModelDiscription("0");
+	    						directRebate.setModelDiscription("0");
+	    						hsrp.setModelDiscription("0");
+	    						salary.setModelDiscription("0");
+	    						homol.setModelDiscription("0");
+	    						insuranceRecovery.setModelDiscription("0");
+	    						FreightRecovery.setModelDiscription("0");
+	    						scrapExpCroTrade.setModelDiscription("0");
+	    						possitiveScraExp.setModelDiscription("0");
+	    					
+	    						
+
+	                    		OverseasServiceMannual.setModelDiscription("0");
+	        				  	WhRentCrossTrade.setModelDiscription("0");
+	        	        		directTestRideClaim.setModelDiscription("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==9) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setGroup(String.valueOf(value).trim());
+	                    		marketing.setGroup(String.valueOf(value).trim());
+	                    		warranty.setGroup(String.valueOf(value).trim());
+	                    		salesDep.setGroup(String.valueOf(value).trim());
+	                    		genAdmin.setGroup(String.valueOf(value).trim());
+	                    		incentive.setGroup(String.valueOf(value).trim());
+	                    		directRebate.setGroup(String.valueOf(value).trim());
+	                    		hsrp.setGroup(String.valueOf(value).trim());
+	                    		salary.setGroup(String.valueOf(value).trim());
+	                    		homol.setGroup(String.valueOf(value).trim());
+	                    		insuranceRecovery.setGroup(String.valueOf(value).trim());
+	                    		FreightRecovery.setGroup(String.valueOf(value).trim());
+	                    		scrapExpCroTrade.setGroup(String.valueOf(value).trim());
+	                    		possitiveScraExp.setGroup(String.valueOf(value).trim());
+	    					
+	                    		OverseasServiceMannual.setGroup(String.valueOf( value).trim());
+	        				  	WhRentCrossTrade.setGroup(String.valueOf( value).trim());
+	        	        		directTestRideClaim.setGroup(String.valueOf( value).trim());
+	                    		
+	                    		
+	                    		
+	    					}else {
+	    						rebate.setGroup("");
+	    						marketing.setGroup("");
+	    						warranty.setGroup("");
+	    						salesDep.setGroup("");
+	    						genAdmin.setGroup("");
+	    						incentive.setGroup("");
+	    						directRebate.setGroup("");
+	    						hsrp.setGroup("");
+	    						salary.setGroup("");
+	    						homol.setGroup("");
+	    						insuranceRecovery.setGroup("");
+	    						FreightRecovery.setGroup("");
+	    						scrapExpCroTrade.setGroup("");
+	    						possitiveScraExp.setGroup("");
+	    					
+	    						
+	    						OverseasServiceMannual.setGroup("");
+	        				  	WhRentCrossTrade.setGroup("");
+	        	        		directTestRideClaim.setGroup("");
+	                    		
+	                    		
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==10) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setCategory("Rebate");
+	                    		rebate=	setMontlyValue(monthlyValue,rebate,String.valueOf(value).trim());
+	                    		
+	    					}else {
+	    						rebate.setCategory("Rebate");
+	    						rebate=	setMontlyValue(monthlyValue,rebate,"");
+	    						
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==11) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setMonthly(String.valueOf(value).trim()); 
+	    					}else {
+	    						rebate.setMonthly("0"); 
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==12) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setAverage(String.valueOf(value).trim()); 
+	    					}else {
+	    						rebate.setAverage("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==13) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		rebate.setLastMonth(String.valueOf(value).trim());
+	    					}else {
+	    						rebate.setLastMonth("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==14) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		marketing.setCategory("Marketing");
+	                    		marketing=	setMontlyValue(monthlyValue,marketing,String.valueOf(value).trim());
+	    					}else {
+	    						marketing.setCategory("Marketing");
+	    						marketing=	setMontlyValue(monthlyValue,marketing,"");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==15) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		marketing.setMonthly(String.valueOf(value).trim());
+	    					}else {
+	    						marketing.setMonthly("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==16) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		marketing.setAverage(String.valueOf(value).trim());
+	    					}else {
+	    						marketing.setAverage("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==17) {
+	                    	if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	    					{
+	                    		marketing.setLastMonth(String.valueOf(value).trim());
+	    					}else {
+	    						marketing.setLastMonth("0");
+	    					}
+	                    	 columnIndex++;
+	                    }else if(c==18) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            warranty.setCategory("Warranty");
+	                            warranty=	setMontlyValue(monthlyValue,warranty,String.valueOf(value).trim());
+	                        }else {
+	                            warranty.setCategory("Warranty");
+	                            warranty=  setMontlyValue(monthlyValue,warranty,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==19) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            warranty.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                            warranty.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==20) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            warranty.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                            warranty.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==21) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            warranty.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                            warranty.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==22) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            salesDep.setCategory("Sales Department");
+	                            salesDep=	setMontlyValue(monthlyValue,salesDep,String.valueOf(value).trim());
+	                        }else {
+	                            salesDep.setCategory("Sales Department");
+	                            salesDep=    setMontlyValue(monthlyValue,salesDep,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==23) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            salesDep.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                            salesDep.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==24) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            salesDep.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                            salesDep.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==25) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            salesDep.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                            salesDep.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==26) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            genAdmin.setCategory("GEN.ADMIN");
+	                            genAdmin=	setMontlyValue(monthlyValue,genAdmin,String.valueOf(value).trim());
+	                        }else {
+	                        	genAdmin.setCategory("GEN.ADMIN");
+	                            genAdmin=    setMontlyValue(monthlyValue,genAdmin,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==27) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	genAdmin.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                        	genAdmin.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==28) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	genAdmin.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                        	genAdmin.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==29) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	genAdmin.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                        	genAdmin.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==30) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            incentive.setCategory("Incentive");
+	                            incentive=	setMontlyValue(monthlyValue,incentive,String.valueOf(value).trim());
+	                        }else {
+	                        	incentive.setCategory("Incentive");
+	                        	incentive=    setMontlyValue(monthlyValue,incentive,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==31) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	incentive.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                        	incentive.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==32) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	incentive.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                        	incentive.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==33) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	incentive.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                        	incentive.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==34) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            directRebate.setCategory("Direct rebate");
+	                            directRebate=	setMontlyValue(monthlyValue,directRebate,String.valueOf(value).trim());
+	                        }else {
+	                        	directRebate.setCategory("Direct rebate");
+	                        	directRebate=    setMontlyValue(monthlyValue,directRebate,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==35) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	directRebate.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                        	directRebate.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==36) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	directRebate.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                        	directRebate.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==37) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	directRebate.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                        	directRebate.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==38) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            hsrp.setCategory("HSRP");
+	                            hsrp=	setMontlyValue(monthlyValue,hsrp,String.valueOf(value).trim());
+	                        }else {
+	                        	hsrp.setCategory("HSRP");
+	                        	hsrp=    setMontlyValue(monthlyValue,hsrp,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==39) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	hsrp.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                        	hsrp.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==40) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	hsrp.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                        	hsrp.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==41) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	hsrp.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                        	hsrp.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==42) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            salary.setCategory("Salary");
+	                            salary=setMontlyValue(monthlyValue,salary,String.valueOf(value).trim());
+	                        }else {
+	                            salary.setCategory("Salary");
+	                            salary=    setMontlyValue(monthlyValue,salary,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==43) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            salary.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                            salary.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==44) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            salary.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                            salary.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==45) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            salary.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                            salary.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==46) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            homol.setCategory("HOMOL");
+	                            homol=setMontlyValue(monthlyValue,homol,String.valueOf(value).trim());
+	                        }else {
+	                            homol.setCategory("HOMOL");
+	                            homol=    setMontlyValue(monthlyValue,homol,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==47) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            homol.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                            homol.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==48) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            homol.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                            homol.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==49) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            homol.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                            homol.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==50) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            insuranceRecovery.setCategory("Insurance Recovery");
+	                            insuranceRecovery=	setMontlyValue(monthlyValue,insuranceRecovery,String.valueOf(value).trim());
+	                        }else {
+	                            insuranceRecovery.setCategory("Insurance Recovery");
+	                            insuranceRecovery=   setMontlyValue(monthlyValue,insuranceRecovery,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==51) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            insuranceRecovery.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                            insuranceRecovery.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==52) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            insuranceRecovery.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                            insuranceRecovery.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==53) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            insuranceRecovery.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                            insuranceRecovery.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==54) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            FreightRecovery.setCategory("Freight Recovery");
+	                            FreightRecovery= setMontlyValue(monthlyValue,FreightRecovery,String.valueOf(value).trim());
+	                        }else {
+	                            FreightRecovery.setCategory("Freight Recovery");
+	                            FreightRecovery=   setMontlyValue(monthlyValue,FreightRecovery,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==55) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            FreightRecovery.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                            FreightRecovery.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==56) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            FreightRecovery.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                            FreightRecovery.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==57) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            FreightRecovery.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                            FreightRecovery.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==58) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            scrapExpCroTrade.setCategory("Scrap Expenses Cross trade");
+	                            scrapExpCroTrade= 	setMontlyValue(monthlyValue,scrapExpCroTrade,String.valueOf(value).trim());
+	                        }else {
+	                            scrapExpCroTrade.setCategory("Scrap Expenses Cross trade");
+	                            scrapExpCroTrade= setMontlyValue(monthlyValue,scrapExpCroTrade,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==59) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            scrapExpCroTrade.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                            scrapExpCroTrade.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==60) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            scrapExpCroTrade.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                            scrapExpCroTrade.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==61) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            scrapExpCroTrade.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                            scrapExpCroTrade.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==62) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            possitiveScraExp.setCategory("Positive Scrap Expenses CBU");
+	                            possitiveScraExp=setMontlyValue(monthlyValue,possitiveScraExp,String.valueOf(value).trim());
+	                        }else {
+	                            possitiveScraExp.setCategory("Positive Scrap Expenses CBU");
+	                            possitiveScraExp=	setMontlyValue(monthlyValue,possitiveScraExp,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==63) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            possitiveScraExp.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                            possitiveScraExp.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==64) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            possitiveScraExp.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                            possitiveScraExp.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==65) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            possitiveScraExp.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                            possitiveScraExp.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==66) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                            directTestRideClaim.setCategory("Direct Test Ride Claim");
+	                            directTestRideClaim=setMontlyValue(monthlyValue,directTestRideClaim,String.valueOf(value).trim());
+	                        }else {
+	                        	directTestRideClaim.setCategory("Direct Test Ride Claim");
+	                        	directTestRideClaim=	setMontlyValue(monthlyValue,directTestRideClaim,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==67) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	directTestRideClaim.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                        	directTestRideClaim.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==68) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	directTestRideClaim.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                        	directTestRideClaim.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==69) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	directTestRideClaim.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                        	 
+	                        	directTestRideClaim.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==70) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	WhRentCrossTrade .setCategory("Wh. Rent Cross trade ");
+	                        	WhRentCrossTrade =setMontlyValue(monthlyValue,WhRentCrossTrade ,String.valueOf(value).trim());
+	                        }else {
+	                        	WhRentCrossTrade .setCategory("Wh. Rent Cross trade ");
+	                        	WhRentCrossTrade =	setMontlyValue(monthlyValue,WhRentCrossTrade ,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==71) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	WhRentCrossTrade .setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                        	WhRentCrossTrade .setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==72) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	WhRentCrossTrade .setAverage(String.valueOf(value).trim());
+	                        }else {
+	                        	WhRentCrossTrade .setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==73) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	WhRentCrossTrade .setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                        	WhRentCrossTrade .setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==74) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	OverseasServiceMannual.setCategory("Overseas Service Mannual");
+	                        	OverseasServiceMannual=setMontlyValue(monthlyValue,OverseasServiceMannual,String.valueOf(value).trim());
+	                        }else {
+	                        	OverseasServiceMannual.setCategory("Overseas Service Mannual");
+	                        	OverseasServiceMannual=	setMontlyValue(monthlyValue,OverseasServiceMannual,"");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==75) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	OverseasServiceMannual.setMonthly(String.valueOf(value).trim());
+	                        }else {
+	                        	OverseasServiceMannual.setMonthly("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==76) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	OverseasServiceMannual.setAverage(String.valueOf(value).trim());
+	                        }else {
+	                        	OverseasServiceMannual.setAverage("0");
+	                        }
+	                        columnIndex++;
+	                    }else if(c==77) {
+	                        if(null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+	                        {
+	                        	OverseasServiceMannual.setLastMonth(String.valueOf(value).trim());
+	                        }else {
+	                        	OverseasServiceMannual.setLastMonth("0");
+	                        }
+	                        columnIndex++;
+	                    }	                    
+	                    }
+	                columnIndex=0;
+	            
+	                 
+	                
+
+	            
+	             //System.out.println(rebate.toString());
+                 rowData.add(rebate == null ? null :rebate);
+                 rowData.add(marketing == null ? null :marketing);
+                 rowData.add(warranty == null ? null :warranty);
+                 rowData.add(salesDep == null ? null :salesDep);
+                 rowData.add(genAdmin == null ? null :genAdmin);
+                 rowData.add(incentive == null ? null :incentive);
+                 rowData.add(directRebate == null ? null :directRebate);
+                 rowData.add(hsrp == null ? null :hsrp);
+                 rowData.add(salary == null ? null :salary);
+                 rowData.add(homol == null ? null :homol);
+                 rowData.add(insuranceRecovery == null ? null :insuranceRecovery);
+                 rowData.add(FreightRecovery == null ? null :FreightRecovery);
+                 rowData.add(scrapExpCroTrade == null ? null :scrapExpCroTrade);
+                 rowData.add(possitiveScraExp == null ? null :possitiveScraExp);
+                 rowData.add(OverseasServiceMannual == null ? null :OverseasServiceMannual);
+                 rowData.add(WhRentCrossTrade == null ? null :WhRentCrossTrade);
+                 rowData.add(directTestRideClaim == null ? null :directTestRideClaim);
+              
+                 
+                 
+                 
+                 
+                 
+//                 rowData.stream().forEach(a->System.err.println(a));
+	            }//row iteration end
+	          
+	           
+	             }//END- sheet iteration 
+	             
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+//	            logger.info("not able to read data from cell in readDataBetweenEndMarkers()");
+
+	            GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                    "ResultTransPackingEndBoundedExcelReader_new.class",
+	                    "readDataBetweenEndMarkers()",
+	                    excelFile.getName() ,
+	                    "not able to read data from cell for sheet of excel-> Result Expense",
+	                   " so processing other files, check logs ->  " +e.toString()+  "  " +e.getMessage()
+	                    
+	          )  );
+//System.exit(0);
+	        }   finally {
+	            try {
+	                
+	                if (is != null) is.close();
+	            } catch (Exception ex) {
+	                ex.printStackTrace();
+	            }
+	        }
+
+	        return rowData;
+	    }
+
+	 public Result_Expense setMontlyValue(String month$sheetName,Result_Expense obj,String value) {
+		 
+		 
+		 if("Apr".startsWith(month$sheetName) || "Apr".contains(month$sheetName)) {
+			 
+			   obj.setApr( (null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("May".startsWith(month$sheetName) || "May".contains(month$sheetName)) {
+			    obj.setMay((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Jun".startsWith(month$sheetName) || "Jun".contains(month$sheetName)) {
+			    obj.setJun((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Jul".startsWith(month$sheetName) || "Jul".contains(month$sheetName)) {
+			    obj.setJul((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Aug".startsWith(month$sheetName) || "Aug".contains(month$sheetName)) {
+			    obj.setAug((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Sep".startsWith(month$sheetName) || "Sep".contains(month$sheetName)) {
+			    obj.setSep((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Oct".startsWith(month$sheetName) || "Oct".contains(month$sheetName)) {
+			    obj.setOct((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Nov".startsWith(month$sheetName) || "Nov".contains(month$sheetName)) {
+			    obj.setNov((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Dec".startsWith(month$sheetName) || "Dec".contains(month$sheetName)) {
+			    obj.setDec((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Jan".startsWith(month$sheetName) || "Jan".contains(month$sheetName)) {
+			    obj.setJan((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Feb".startsWith(month$sheetName) || "Feb".contains(month$sheetName)) {
+			    obj.setFeb((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}else if("Mar".startsWith(month$sheetName) || "Mar".contains(month$sheetName)) {
+			    obj.setMar((null!=value && !"".equals(value) && !"-".equals(value.toString().trim()))
+					    ? value   : "");
+			}
+		 return obj;
+		 
+	 }
+	 
+	 
+	    //   Detect END in first row -> stop columns
+	    private   int findLastColumnBeforeEnd(Row headerRow, FormulaEvaluator evaluator) {
+try {
+	        int lastCol = headerRow.getLastCellNum();
+
+	        for (int c = 0; c < lastCol; c++) {
+
+	            Object val =  readCellValue(headerRow.getCell(c),evaluator);
+
+	            if (val != null && "END".equalsIgnoreCase(val.toString().trim())) {
+	                return c - 1;
+	            }else {
+	            	   
+	  	           // logger.info("not able to find END marker in column in findLastColumnBeforeEnd() in :: > "+ EndBoundedExcelReader.class.getName());
+	            	  // logger.info("not able to find END marker in column in findLastColumnBeforeEnd() in :: > "+ ResultTransPackingEndBoundedExcelReader.class.getName());
+
+	            }
+	        }
+	        
+}catch(Exception e) {e.printStackTrace();}
+	        return  -101;
+	    }
+
+	    //   Detect END in first column -> stop rows
+	    private   int findLastRowBeforeEnd(XSSFSheet sheet, FormulaEvaluator evaluator) {
+
+	        int lastRow = sheet.getLastRowNum();
+try {
+	        for (int r = 0; r <= lastRow; r++) {
+
+	            Row row = sheet.getRow(r);
+	            if (row == null) continue;
+
+	            Object val =  readCellValue(row.getCell(0),evaluator);
+
+	            if (val != null && "END".equalsIgnoreCase(val.toString().trim())) {
+	                return r - 1;
+	            }else {
+	            	   
+	  	           // logger.info("not able to find END marker in row in findLastRowBeforeEnd() in :: > "+ EndBoundedExcelReader.class.getName());
+	            	//  logger.info("not able to find END marker in row in findLastRowBeforeEnd() in :: > "+ ResultTransPackingEndBoundedExcelReader.class.getName());
+
+	            }
+	        }
+	    }catch(Exception e) {e.printStackTrace();}
+	        return -101;
+	    }
+	    
+	    
+	    public Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	    {
+	        Object cellValue = null;
+
+	        try
+	        {
+	            if (cell == null)
+	                return null;
+
+	            DataFormatter formatter = new DataFormatter();
+
+	            // ================= FORMULA =================
+	            if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	            {
+	                try
+	                {
+	                    CellValue eval = evaluator.evaluate(cell);
+
+	                    if (eval != null)
+	                    {
+	                        switch (eval.getCellType())
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                                double num = eval.getNumberValue();
+//	                              cellValue = (long) num;   // 🔥 remove decimal
+//	                                cellValue = Math.round(num);
+	                                
+	                                /*below will give
+	                                125737.99999997  →  "125737.99999997"
+									125738.0         →  "125738"
+	                                */
+	                                cellValue = BigDecimal.valueOf(num).toPlainString();
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = eval.getStringValue();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = eval.getBooleanValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                }
+	                catch (Exception e)
+	                {
+	                    // 🔥 IMPORTANT: fallback when POI fails (IFERROR, XLOOKUP)
+
+	                    switch (cell.getCachedFormulaResultType())
+	                    {
+	                        case Cell.CELL_TYPE_NUMERIC:
+	                            double num = cell.getNumericCellValue();
+//	                          cellValue = (long) num;   // 🔥 remove decimal
+//	                            cellValue = Math.round(num);  
+
+                                /*below will give
+                                125737.99999997  →  "125737.99999997"
+								125738.0         →  "125738"
+                                */
+                                cellValue = BigDecimal.valueOf(num).toPlainString();
+	                            break;
+
+	                        case Cell.CELL_TYPE_STRING:
+	                            cellValue = cell.getStringCellValue();
+	                            break;
+
+	                        case Cell.CELL_TYPE_BOOLEAN:
+	                            cellValue = cell.getBooleanCellValue();
+	                            break;
+
+	                        default:
+	                            cellValue = 0;
+	                    }
+	                }
+	            }
+
+	            // ================= NUMERIC =================
+	            else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+	            {
+	                double num = cell.getNumericCellValue();
+//                  cellValue = (long) num;   // 🔥 remove decimal
+//                  cellValue = Math.round(num);  
+
+                    /*below will give
+                    125737.99999997  →  "125737.99999997"
+					125738.0         →  "125738"
+                    */
+                    cellValue = BigDecimal.valueOf(num).toPlainString();
+	            }
+
+	            // ================= STRING =================
+	            else if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+	            {
+	                cellValue = cell.getStringCellValue();
+	            }
+
+	            // ================= CLEANUP =================
+	            if (cellValue != null)
+	            {
+	                String val = cellValue.toString();
+
+	                if (val.contains(",")) val = val.replace(",", "");
+	                if (val.contains("* ")) val = val.replace("* ", "");
+
+	                cellValue = val.trim();
+	            }
+	        }
+	        catch (Exception e)
+	        {
+
+	        	e.printStackTrace();
+	            logger.info("Exception in readCellValue: " + e.toString() + " " + e.getMessage());
+
+	            cellValue = null;
+
+	            GlobalExceptionHandler_AND_EmailSender.handleException(
+	                new PrintLog_AND_SendEmail_Exception(
+	                    "ResultExpenseEndBoundedExcelReader_new.class",
+	                    "readCellValue()",
+	                    excelFile2.getName(),
+	                    "not able to read data from cell for sheet of excel -> Result Expense",
+	                    "so processing other files, check logs -> " + e.toString() + " " + e.getMessage()
+	                )
+	            );
+	        }
+
+	        return cellValue;
+	    }
+	   /*
+	    public Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	    {
+	    	CellValue evaluatedValue =null;
+	        Object cellValue = null;
+
+	        try
+	        {
+	            if (cell == null)
+	                return null;
+
+	            DataFormatter formatter = new DataFormatter();
+
+	            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+	            {
+	                cellValue = formatter.formatCellValue(cell);
+	            }
+	            else if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+	            {
+	                cellValue = cell.getStringCellValue();
+	            }
+	            else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	            {
+	                String formula = cell.getCellFormula();
+
+	                // Try evaluating (works for SUM, IF, etc.)
+	                evaluatedValue = evaluator.evaluate(cell);
+	                try
+	                {
+
+	                    if (evaluatedValue != null)
+	                    {
+	                        switch (evaluatedValue.getCellType())
+	                        {
+	                             case Cell.CELL_TYPE_NUMERIC:
+//	                               cellValue = formatter.formatCellValue(cell, evaluator);
+	                            	 cellValue = String.valueOf(evaluatedValue.getNumberValue());
+//	                            	 System.err.println(cellValue);
+	                                break;
+	                                
+
+//	                        case Cell.CELL_TYPE_NUMERIC:
+//	                            cellValue = evaluatedValue.getNumberValue();
+//	                            break;
+	                            
+	                             
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = evaluatedValue.getStringValue();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = evaluatedValue.getBooleanValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                }
+	                catch (Exception ex)
+	                {
+	                    // POI cannot evaluate (example: XLOOKUP)
+	                    cellValue = null;
+	                }
+
+	                
+//	                 * If evaluator failed (XLOOKUP case),
+//	                 * read cached Excel result
+	                 
+	                if (cellValue == null)
+	                {
+	                    try
+	                    {
+	                        int cachedType = cell.getCachedFormulaResultType();
+
+	                        switch (cachedType)
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                                cellValue = formatter.formatCellValue(cell);
+	                             	// cellValue = String.valueOf(evaluatedValue.getNumberValue());
+	                            	 System.err.println(cellValue);
+	                                break;
+
+	                            case Cell.CELL_TYPE_STRING:
+	                                cellValue = cell.getRichStringCellValue().getString();
+	                                break;
+
+	                            case Cell.CELL_TYPE_BOOLEAN:
+	                                cellValue = cell.getBooleanCellValue();
+	                                break;
+
+	                            default:
+	                                cellValue = null;
+	                        }
+	                    }
+	                    catch (IllegalStateException ignore)
+	                    {
+	                        cellValue = null;
+	                    }
+	                }
+
+	                // IFERROR(...,"0") fallback
+	                if (cellValue == null || "".equals(cellValue))
+	                {
+	                    cellValue = "0";
+	                }
+	            }
+
+	            // cleanup formatting
+	            if (cellValue != null)
+	            {
+	                String val = cellValue.toString();
+	                if (val.contains(",")) val = val.replace(",", "");
+	                if (val.contains("* ")) val = val.replace("* ", "");
+	                cellValue = val.trim();
+	            }
+	        }
+	        catch (Exception e)
+	        {
+	        	e.printStackTrace();
+	            logger.info("Exception in readCellValue: " + e.getMessage());
+	            cellValue = null;
+	            GlobalExceptionHandler_AND_EmailSender.handleException(  new PrintLog_AND_SendEmail_Exception(
+	                    "ResultTransPackingEndBoundedExcelReader_new.class",
+	                    "readCellValue()",
+	                    excelFile2.getName() ,
+	                    "not able to read data from cell for sheet -> Result Trans Packing",
+	                   " so processing other files, check logs ->  " +e.toString()+  "  " +e.getMessage()
+	                    
+	            ));
+	        }
+
+	        return cellValue;
+	    }
+	    
+	    */
+	/*
+	public   Object readCellValue(Cell cell, FormulaEvaluator evaluator)
+	{
+		Object cellValue = null;
+		try {
+			if (null != cell) {
+				
+//				  check for Cell Type and format accordingly
+				
+				if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+					
+					// set cell type as String
+//					cell.setCellType(Cell.CELL_TYPE_STRING);
+//					cellValue = cell.getStringCellValue();
+					DataFormatter dmt = new DataFormatter();
+					cellValue = dmt.formatCellValue(cell);
+					if(null!=cellValue && cellValue.toString().contains(","))
+					{
+						cellValue=  cellValue.toString().replace(",", "");
+					}
+					if(null!=cellValue && !"".equals(cellValue))
+					{
+						cellValue = cellValue.toString().replace("* ", "");
+					}
+					dmt = null;
+				}
+				else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+				{
+				    DataFormatter formatter = new DataFormatter();
+
+				    // Evaluate the formula result
+				    CellValue evaluatedValue = evaluator.evaluate(cell);
+
+				    if (evaluatedValue != null)
+				    {
+				        switch (evaluatedValue.getCellType())
+				        {
+				            case Cell.CELL_TYPE_NUMERIC:
+				                cellValue = formatter.formatCellValue(cell, evaluator);
+				                if(null!=cellValue && cellValue.toString().contains(","))
+								{
+									cellValue=  cellValue.toString().replace(",", "");
+								}
+								if(null!=cellValue && !"".equals(cellValue))
+								{
+									cellValue = cellValue.toString().replace("* ", "");
+								}
+				                break;
+
+				            case  Cell.CELL_TYPE_STRING:
+				                cellValue = evaluatedValue.getStringValue();
+				                break;
+
+				            case Cell.CELL_TYPE_BOOLEAN:
+				                cellValue = evaluatedValue.getBooleanValue();
+				                break;
+
+				            case Cell.CELL_TYPE_BLANK:
+				            	 
+				            	
+				                cellValue = null;
+				                break;
+
+				            default:
+				                cellValue = formatter.formatCellValue(cell);
+				        }
+				    }
+				}
+				else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+					cellValue = cell.getStringCellValue();
+				}
+			}
+		} catch (Exception e) {
+			//printStackTraceToLogs(Utilities.class.getName(), "readCellValue()", e);
+	            logger.info("Exception in converting cell value to object in readCellValue (so returning null) in :: > "+ EndBoundedExcelReader.class.getName());
+
+			// set cellValue to null
+			cellValue = null;
+		}
+		if (cell.getCellType() == Cell.CELL_TYPE_FORMULA)
+	    {
+			  DataFormatter formatter = new DataFormatter();
+			   int cachedType = cell.getCachedFormulaResultType();
+			   if(cachedType==Cell.CELL_TYPE_NUMERIC) {
+				   cellValue = formatter.formatCellValue(cell);
+			   }else if(cachedType==Cell.CELL_TYPE_STRING) {
+				   cellValue = cell.getRichStringCellValue().getString();
+			   }else if(cachedType==Cell.CELL_TYPE_BOOLEAN) {
+				   cellValue = cell.getBooleanCellValue();
+			   }else if(Cell.CELL_TYPE_BLANK==cachedType) {
+				   cellValue = null;
+			   }
+			   
+
+			 
+//cellValue = formatter.formatCellValue(cell);
+System.out.println(String.valueOf(  cellValue));
+ 
+	    }
+		return cellValue;
+	
+	
+	
+	
+	}
+	*/
+}

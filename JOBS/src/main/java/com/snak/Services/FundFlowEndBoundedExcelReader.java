@@ -89,8 +89,13 @@ String monthlyValue=null;
 	             
 	             //iterating all monthly sheets of result expense
 	             List<String> validMonths = Arrays.asList(
+	            		    // Short names
 	            		    "Apr","May","Jun","Jul","Aug","Sep",
-	            		    "Oct","Nov","Dec","Jan","Feb","Mar"
+	            		    "Oct","Nov","Dec","Jan","Feb","Mar",
+
+	            		    // Full names
+	            		    "April","May","June","July","August","September",
+	            		    "October","November","December","January","February","March"
 	            		);
 	             System.out.println("Sheets available  "+workbook.getNumberOfSheets());
 	             
@@ -121,12 +126,22 @@ String monthlyValue=null;
 System.out.println(sheet.getSheetName());
 	            	    // Match pattern like Apr'23, Jan'24 etc. or even if apr, jan these exsist
 //boolean isFullFormat = sheetName.matches("^[A-Za-z]{3}'\\d{2}$");
-boolean isFullFormat = sheetName.matches("^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'\\d{2}$");
-if (sheetName != null && sheetName.length() >= 3) {
-	sheetName = sheetName.substring(0, 3);// Apr
+if (sheetName == null || sheetName.length() < 3) {
+    continue sheetIterator;
 }
-boolean isShortFormat = validMonths.contains(sheetName);
-if (!isFullFormat && !isShortFormat) {
+
+//normalize once
+String normalized = sheetName.substring(0, 1).toUpperCase() + sheetName.substring(1).toLowerCase();
+//boolean isFullFormat = normalized.matches("^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'\\d{2}$");
+boolean isValid = normalized.matches(
+	    "^(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)('\\d{2})?$"
+	);
+//if (sheetName != null && sheetName.length() >= 3) {
+//	sheetName = sheetName.substring(0, 3);// Apr
+//}
+if (!isValid) {
+//boolean isShortFormat = validMonths.contains(normalized);
+//if (!isFullFormat && !isShortFormat) {
 	            	    	 
 	            	    	  //if in excel their is only 1 sheet and sheet name is not in formate like 'apr' or apr'25 then returning null
 	            	    	  //so that excel job tracker will be maintained as failed for that excel file
@@ -143,14 +158,15 @@ if (!isFullFormat && !isShortFormat) {
 	  	          	                        "and also no other sheets except this format should be their, although other sheet will not be processed and these fault sheet will be ignored"
 	  	          	                    )
 	  	          	                );
+	            	    		  System.out.println("return null");
 	            	    		  return null;
 	            	    	  }
+	            	    	  System.out.println("continue loop");
 	          	                continue sheetIterator;   // continueing to other month sheets
 	            	    	
 	            	    }//END Match pattern like Apr'23, Jan'24 etc.
-	            	    
 
-	            	        System.err.println("Processing Sheet: " + sheetName);
+System.err.println("->>>>>>Processing Sheet that have formate like 'Apr'24' or 'Apr' or 'April'-> " + sheetName);
 
 	            	        // Extract Month & Year
 	            	        if (sheetName != null && sheetName.length() >= 3) {
